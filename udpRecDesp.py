@@ -8,7 +8,7 @@ maxpkt = 1024
 global UDP_PORT
 UDP_PORT = 6008
 global UDP_IP
-UDP_IP = ""
+UDP_IP = "192.168.0.10"
 global timeout
 timeout = 5
 def main():
