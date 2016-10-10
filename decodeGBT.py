@@ -33,20 +33,36 @@ def main(argv):
     decodedfile = open(outputfile, 'w')
 
     eventnum = 0
-    n = 5 #starting pt of data
+    n = 3 #starting pt of data
+    remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
     for line in datafile:
         #need to get rid of 20 bits some how, currently need 112/128
         strobe = line[:len(line)-1]
-        artdata = strobe[n+15:n+27] 
+        artdata = strobe[n+15:n+27]
+        artdata = "{0:048b}".format(int(artdata,16))
         parity = strobe[n+13:n+15]
         hitmap = strobe[n+5:n+13]
+        hitmap = "{0:032b}".format(int(hitmap,16))
+        print "HITMAP!: ",hitmap
         error = strobe[n+3:n+5]
         bcid = strobe[n:n+3]
-        artdata = bin(int(artdata,16))[2:] 
         vmmdata = []
         for i in range(8):
-            vmmdata.append(artdata[i*6:i+6])
-        decodedfile.write('bcid: ' + bcid + ' hitmap: ' + hitmap + ' art data: ' + artdata+'\n')
+            print i
+            vmmdata.append(int(artdata[i*6:i*6+6],2))
+        for i in range(len(remapping)):
+            print "VMM" + str(31-remapping[i]) + " " +hitmap[i],
+            print " "
+        decodedfile.write('bcid: ' + str(int(bcid,16)) + ' hitmap: ' + hitmap\
+                          + ' ' + str(vmmdata[7])\
+                          + ' ' + str(vmmdata[6])\
+                          + ' ' + str(vmmdata[5])\
+                          + ' ' + str(vmmdata[4])\
+                          + ' ' + str(vmmdata[3])\
+                          + ' ' + str(vmmdata[2])\
+                          + ' ' + str(vmmdata[1])\
+                          + ' ' + str(vmmdata[0])\
+                          + '\n')
     decodedfile.close()
     datafile.close()
     print "done decoding, exiting \n"
