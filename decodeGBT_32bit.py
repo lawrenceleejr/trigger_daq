@@ -45,19 +45,36 @@ def main(argv):
             parity = strobe[n+13:n+15]
             hitmap = strobe[n+5:n+13]
             hitmap = "{0:032b}".format(int(hitmap,16))
-            print "HITMAP!: ",hitmap
+            #print "HITMAP!: ",hitmap
             error = strobe[n+3:n+5]
             bcid = strobe[n:n+3]
             lines = []
             artdata = "{0:048b}".format(int(artdata,16))
             vmmdata = []
+            vmmlist = []
+            boardlist = []
             for i in range(8):
-                vmmdata.append(int(artdata[i*6:i*6+6],2))
+                vmmdata.append(int(artdata[i*6:i*6+6],2)+1)
             for i in range(len(remapping)):
-                print "VMM" + str(31-remapping[i]) + " " +hitmap[i],
-            print " "
-            decodedfile.write('bcid: ' + str(int(bcid,16)) + ' hitmap: ' + hitmap\
-                              + ' ' + str(vmmdata[7])\
+                #print "VMM" + str(31-remapping[i]) + " " +hitmap[i],
+                if (hitmap[i] is "1"):
+                    boardlist.append((31-remapping[i])/8)
+                    vmmlist.append((31-remapping[i])%8)
+            #print " "
+            decodedfile.write('BCID: ' + str(int(bcid,16)) + '\thitmap: ' + hitmap + '\tBoards:')
+            if len(boardlist) is 0:
+                decodedfile.write(' N/A')
+            for i in reversed(range(len(boardlist))):
+                decodedfile.write(' ' + str(boardlist[i]))
+            decodedfile.write('\tVMMs:')
+            for i in reversed(range(len(vmmlist))):
+                decodedfile.write(' ' + str(vmmlist[i]))
+            if len(vmmlist) is 0:
+                decodedfile.write(' N/A\n')
+                continue
+            if len(vmmlist) is 1:
+                decodedfile.write('\t')
+            decodedfile.write('\tCHs ' + str(vmmdata[7])\
                               + ' ' + str(vmmdata[6])\
                               + ' ' + str(vmmdata[5])\
                               + ' ' + str(vmmdata[4])\
