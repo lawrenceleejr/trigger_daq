@@ -49,7 +49,7 @@ def main(argv):
         vmmdata = []
         for i in range(8):
             print i
-            vmmdata.append(int(artdata[i*6:i*6+6],2))
+            vmmdata.append(int(artdata[i*6:i*6+6],2)+1)
         for i in range(len(remapping)):
             print "VMM" + str(31-remapping[i]) + " " +hitmap[i],
             print " "

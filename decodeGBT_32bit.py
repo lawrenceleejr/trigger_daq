@@ -34,7 +34,8 @@ def main(argv):
     eventnum = 0
     n = 5 #starting pt of data
     lines = []
-    remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
+    #remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
+    remapping = range(32)
     for line in datafile:
         lines.append(line[:len(line)-1])
         if len(lines) == 4:
