@@ -46,6 +46,8 @@ def main():
                             wordout = wordout + byte
                             if wordcount == 16:
 #                                print "WORDOUT", wordout
+                                timestamp = time.time()*pow(10,9)
+                                myfile.write('%f'%timestamp + '\n')
                                 myfile.write(str(wordout) + '\n')
                                 wordout = ''
                                 wordcount = 0
