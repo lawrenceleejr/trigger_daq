@@ -36,7 +36,7 @@ def main():
                 if len(udpPacket)>0:
                     addrnum = datalist[7] # address number reading from
 #                    print "addr", int(addrnum)
-                    del datalist[:9]
+                    del datalist[:8]
 #                    print datalist
                     wordcount = 0
                     timecnt = 0
@@ -48,6 +48,7 @@ def main():
                             wordout = wordout + byte
                             if wordcount == 4:
 #                                print "WORDOUT", wordout
+                                myfile.write(str(wordout) + '\n')
                                 timestamp = time.time()*pow(10,9)
                                 if timecnt == 20 and int(addrnum) != 21:
                                     myfile.write('%f'%timestamp + '\n')
@@ -55,7 +56,6 @@ def main():
                                 if timecnt == 16 and int(addrnum) == 21:
                                     myfile.write('%f'%timestamp + '\n')
                                     timecnt = 0
-                                myfile.write(str(wordout) + '\n')
                                 wordout = ''
                                 wordcount = 0
                     myfile.close()
