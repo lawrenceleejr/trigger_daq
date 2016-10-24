@@ -36,7 +36,7 @@ def main():
                 if len(udpPacket)>0:
                     addrnum = datalist[7] # address number reading from
 #                    print "addr", int(addrnum)
-                    del datalist[:9]
+                    del datalist[:8]
 #                    print datalist
                     wordcount = 0
                     with open("mmtp_test_%d.dat"%(int(addrnum)), "a") as myfile:
