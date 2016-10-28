@@ -28,37 +28,38 @@ def main():
             data, addr = udp.udp_recv(rawsock)
 #            print "received from ", addr
             count = 1
-            print data
- #           while (count < timeout * 1/readInterval):
-                #udpPacket = data
+#            print data
             udpPacket = [data]
-            #                print udpPacket
-                # this assumes we receive the data in packets of 4 bytes, or 32 bits
+            # this assumes we receive the data in packets of 4 bytes, or 32 bits
             datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(udpPacket[0])]
-#                print datalist
             if len(udpPacket)>0:
                 addrnum = datalist[7] # address number reading from
 #                    print "addr", int(addrnum)
                 del datalist[:8]
 #                    print datalist
                 wordcount = 0
-                timecnt = 0
+                header = [0,0,0,0] #20,21,22,23
                 with open("mmtp_test_%d.dat"%(int(addrnum)), "a") as myfile:
                     wordout = ''
                     for byte in datalist:
+                        if byte == 'A2':
+                            header[3] = 1
                         wordcount = wordcount + 1
-                        timecnt = timecnt + 1
+#                        timecnt[int(addrnum)-20] = timecnt[int(addrnum)-20] + 1
                         wordout = wordout + byte
                         if wordcount == 4:
                             #                                print "WORDOUT", wordout
 #                                myfile.write(str(wordout) + '\n')
                             timestamp = time.time()*pow(10,9)
-                            if timecnt == 20 and int(addrnum) != 21:
-                                myfile.write('%f'%timestamp + '\n')
-                                timecnt = 0
-                            if timecnt == 16 and int(addrnum) == 21:
-                                myfile.write('%f'%timestamp + '\n')
-                                timecnt = 0
+                            # if timecnt[int(addrnum)-20] == 36 and int(addrnum) != 21:
+                            #     myfile.write('%f'%timestamp + '\n')
+                            #     timecnt[int(addrnum)-20] = 0
+                            # if timecnt[int(addrnum)-20] == 16 and int(addrnum) == 21:
+                            #     myfile.write('%f'%timestamp + '\n')
+                            #     timecnt[int(addrnum)-20] = 0
+                            if header[3] == 1:
+                                myfile.write('TIME: ' + '%f'%timestamp + '\n')
+                                header[3] = 0
                             myfile.write(str(wordout) + '\n')
                             wordout = ''
                             wordcount = 0

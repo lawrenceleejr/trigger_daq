@@ -7,7 +7,7 @@ import socket
 class udp_fun:
 
     def __init__(self):
-        self.UDP_IP = "192.168.0.10"
+        self.UDP_IP = ""
         self.UDP_PORT = 6008
         return
 
@@ -22,5 +22,8 @@ class udp_fun:
     def udp_client(self,max_pkt_len, buffer_size):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind((self.UDP_IP, self.UDP_PORT))
-        data, addr = sock.recvfrom(4096)
+        return sock
+    def udp_recv(self,sock):
+        data, addr = sock.recvfrom(4096*4)
         return data, addr
+    

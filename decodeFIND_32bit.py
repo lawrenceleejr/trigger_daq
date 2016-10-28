@@ -56,6 +56,9 @@ def main(argv):
 #    offsets = ["84F","84A","856","85B","85B","856","84F","84A"]
     overall_offset = "C00"
     for line in datafile:
+        if line[0:4] is 'TIME':
+            decodedfile.write(line)
+            continue
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9
             print lines

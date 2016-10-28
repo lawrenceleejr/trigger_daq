@@ -18,16 +18,17 @@ import sys, getopt,binstr
 
 def main(argv):
     remapflag = 0
+    offsetflag = 0
     inputfile = ''
     outputfile = ''
     try:
-        opts, args = getopt.getopt(argv, "hi:o:r", ["ifile=", "ofile="])
+        opts, args = getopt.getopt(argv, "hi:o:r:f", ["ifile=", "ofile="])
     except getopt.GetoptError:
-        print 'decodeHIT_32bit.py -i <inputfile> -o <outputfile>'
+        print 'decodeHIT_32bit.py -i <inputfile> -o <outputfile> [-r] [-f]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'decodeHIT_32bit.py -i <inputfile> -o <outputfile>'
+            print 'decodeHIT_32bit.py -i <inputfile> -o <outputfile> [-r] [-f]'
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
@@ -35,6 +36,8 @@ def main(argv):
             outputfile = arg
         elif opt == '-r':
             remapflag = 1
+        elif opt == '-f':
+            offsetflag = 1
 
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
@@ -50,9 +53,14 @@ def main(argv):
     geoplanes = [] #after remapping, the supposed board number (with mod 8)
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
     offsets = ["856","85B","84A","84F","84A","84F","856","85B"]
+#    offsets = ["0","0","0","0","0","0","0","0"]
 #    offsets = ["84F","84A","856","85B","85B","856","84F","84A"]
     overall_offset = "C00"
+#    overall_offset = "000"
     for line in datafile:
+        if line[0:4] is 'TIME':
+            decodedfile.write(line)
+            continue
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9
             print lines
@@ -63,7 +71,11 @@ def main(argv):
                 hits.append(lines[i+1])
             iplane = 0
             for hit in hits:
-                strip = int(hit[0:4],16)-int(overall_offset,16)-int(offsets[iplane],16)
+                if offsetflag == 1:
+                    print "Added offset!"
+                    strip = int(hit[0:4],16)-int(overall_offset,16)-int(offsets[iplane],16)
+                else:
+                    strip = int(hit[0:4],16)
                 strips.append(strip)
                 if strip is not 0:
                     rawvmms.append(strip/64)
@@ -84,7 +96,11 @@ def main(argv):
                     vmms.append(0)
                     chs.append(0)
                     geoplanes.append(0)
-                strip = int(hit[4:],16)-int(overall_offset,16)-int(offsets[iplane],16)
+                if offsetflag == 1:
+                    print "Added offset!"
+                    strip = int(hit[4:],16)-int(overall_offset,16)-int(offsets[iplane],16)
+                else:
+                    strip = int(hit[4:],16)
                 strips.append(strip)
                 if strip is not 0:
                     rawvmms.append(strip/64)
