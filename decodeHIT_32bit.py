@@ -53,13 +53,10 @@ def main(argv):
     geoplanes = [] #after remapping, the supposed board number (with mod 8)
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
     offsets = ["856","85B","84A","84F","84A","84F","856","85B"]
-#    offsets = ["0","0","0","0","0","0","0","0"]
-#    offsets = ["84F","84A","856","85B","85B","856","84F","84A"]
     overall_offset = "C00"
-#    overall_offset = "000"
     for line in datafile:
-        if line[0:4] is 'TIME':
-            decodedfile.write(line)
+        if str(line[0:4]) =='TIME':
+            decodedfile.write('\n'+line)
             continue
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9

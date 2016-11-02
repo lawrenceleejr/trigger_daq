@@ -5,28 +5,31 @@
 # data: 12 bits of BCID + 8 bits of ERR_FLAGS + 32 bits of HITLIST + 8 bits of art data parity + 8 * 6 bits of art data
 # constant C,E written out somewhere
 
-# A.Wang, last edited Oct 6, 2016
+# A.Wang, last edited Nov 2, 2016
 
 
 import sys, getopt,binstr
 
 
 def main(argv):
+    remapflag = 0
     inputfile = ''
     outputfile = ''
     try:
-        opts, args = getopt.getopt(argv, "hi:o:", ["ifile=", "ofile="])
+        opts, args = getopt.getopt(argv, "hi:o:r", ["ifile=", "ofile="])
     except getopt.GetoptError:
-        print 'decodeGBT.py -i <inputfile> -o <outputfile>'
+        print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> [-r]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'decodeGBT.py -i <inputfile> -o <outputfile>'
+            print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> [-r]'
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
         elif opt in ("-o", "--ofile"):
             outputfile = arg
+        elif opt in ("-r"):
+            remapflag = 1
 
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
@@ -34,14 +37,15 @@ def main(argv):
     eventnum = 0
     n = 5 #starting pt of data
     lines = []
-    #remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
-    remapping = range(32)
+    remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
+    #remapping = range(32)
     for line in datafile:
+        if str(line[0:4]) =='TIME':
+            decodedfile.write('\n'+line)
+            continue
         lines.append(line[:len(line)-1])
         if len(lines) == 4:
-        #need to get rid of 20 bits some how, currently need 112/128
             strobe = ''.join(map(str,lines))
-            #        strobe = strobe[::-1] #reverse strobe
             artdata = strobe[n+15:n+27] 
             parity = strobe[n+13:n+15]
             hitmap = strobe[n+5:n+13]
@@ -56,12 +60,16 @@ def main(argv):
             boardlist = []
             for i in range(8):
                 vmmdata.append(int(artdata[i*6:i*6+6],2)+1)
-            for i in range(len(remapping)):
-                #print "VMM" + str(31-remapping[i]) + " " +hitmap[i],
-                if (hitmap[i] is "1"):
-                    boardlist.append((31-remapping[i])/8)
-                    vmmlist.append((31-remapping[i])%8)
-            #print " "
+            if remapflag == 1:
+                for i in range(len(remapping)):
+                    if (hitmap[i] is "1"):
+                        boardlist.append((31-remapping[i])/8)
+                        vmmlist.append((31-remapping[i])%8)
+            else:
+                for i in range(32):
+                    if (hitmap[i] is "1"):
+                        boardlist.append((31-i)/8)
+                        vmmlist.append((31-i)%8)
             decodedfile.write('BCID: ' + str(int(bcid,16)) + '\thitmap: ' + hitmap + '\tBoards:')
             if len(boardlist) is 0:
                 decodedfile.write(' N/A')
@@ -84,16 +92,6 @@ def main(argv):
                               + ' ' + str(vmmdata[1])\
                               + ' ' + str(vmmdata[0])\
                               + '\n')
-            # decodedfile.write('bcid: ' + str(int(bcid,16)) + ' hitmap: ' + hitmap\
-            #                   + ' VMM 0: ' + str(vmmdata[7])\
-            #                   + ' VMM 1: ' + str(vmmdata[6])\
-            #                   + ' VMM 2: ' + str(vmmdata[5])\
-            #                   + ' VMM 3: ' + str(vmmdata[4])\
-            #                   + ' VMM 4: ' + str(vmmdata[3])\
-            #                   + ' VMM 5: ' + str(vmmdata[2])\
-            #                   + ' VMM 6: ' + str(vmmdata[1])\
-            #                   + ' VMM 7: ' + str(vmmdata[0])\
-            #                   + '\n')
     decodedfile.close()
     datafile.close()
     print "done decoding, exiting \n"
