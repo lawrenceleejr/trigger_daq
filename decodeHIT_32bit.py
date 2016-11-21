@@ -76,6 +76,8 @@ def main(argv):
                 strips.append(strip)
                 if strip is not 0:
                     rawvmms.append(strip/64)
+                    if (iplane == 0) or (iplane == 3) or (iplane == 5) or (iplane == 6):
+                        strip = 512-strip-1
                     if remapflag == 1:
                         ivmm = remapping[strip/64]%8
                         igeoplane = remapping[strip/64]/8
@@ -100,6 +102,8 @@ def main(argv):
                     strip = int(hit[4:],16)
                 strips.append(strip)
                 if strip is not 0:
+                    if (iplane == 0) or (iplane == 3) or (iplane == 5) or (iplane == 6):
+                        strip = 512-strip-1
                     rawvmms.append(strip/64)
                     if remapflag == 1:
                         ivmm = remapping[strip/64]%8
