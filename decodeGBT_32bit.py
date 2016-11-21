@@ -70,28 +70,20 @@ def main(argv):
                     if (hitmap[i] is "1"):
                         boardlist.append((31-i)/8)
                         vmmlist.append((31-i)%8)
-            decodedfile.write('BCID: ' + str(int(bcid,16)) + '\thitmap: ' + hitmap + '\tBoards:')
-            if len(boardlist) is 0:
-                decodedfile.write(' N/A')
-            for i in reversed(range(len(boardlist))):
-                decodedfile.write(' ' + str(boardlist[i]))
-            decodedfile.write('\tVMMs:')
-            for i in reversed(range(len(vmmlist))):
-                decodedfile.write(' ' + str(vmmlist[i]))
-            if len(vmmlist) is 0:
-                decodedfile.write(' N/A\n')
-                continue
-            if len(vmmlist) is 1:
-                decodedfile.write('\t')
-            decodedfile.write('\tCHs ' + str(vmmdata[7])\
-                              + ' ' + str(vmmdata[6])\
-                              + ' ' + str(vmmdata[5])\
-                              + ' ' + str(vmmdata[4])\
-                              + ' ' + str(vmmdata[3])\
-                              + ' ' + str(vmmdata[2])\
-                              + ' ' + str(vmmdata[1])\
-                              + ' ' + str(vmmdata[0])\
-                              + '\n')
+            decodedfile.write( "BCID: {: >10}  Hitmap: {: >20}  Boards: ".format(int(bcid,16), hitmap ) )
+            reversedBoardList = reversed(boardlist)
+            reversedBoardList = [str(x) for x in reversedBoardList]
+            decodedfile.write( '{: >30}'.format( " ".join( reversedBoardList ) if len(reversedBoardList) else "N/A" ) )
+
+            decodedfile.write('  VMMs:')
+            reversedVMMList = reversed(vmmlist)
+            reversedVMMList = [str(x) for x in reversedVMMList]
+            decodedfile.write( '{: >30}'.format( " ".join( reversedVMMList ) if len(reversedVMMList) else "N/A" ) )
+
+            reversedVMMData = reversed(vmmdata)
+            reversedVMMData = [str(x) for x in reversedVMMData]
+            decodedfile.write( '  CH: {: >30}\n'.format( " ".join( reversedVMMData ) if len(reversedVMMData) else "N/A" ) )
+
     decodedfile.close()
     datafile.close()
     print "done decoding, exiting \n"
