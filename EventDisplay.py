@@ -19,6 +19,8 @@ from optparse import OptionParser
 
 import json
 
+from collections import OrderedDict
+
 parser = OptionParser()
 parser.add_option("--valinit", help   = "initial z bin", default=0)
 parser.add_option("--animate", help = "animate!",action="store_true", default=False)
@@ -28,49 +30,48 @@ parser.add_option("--json",    help   = "input json file", default="test.json")
 
 
 with open(options.json, 'r') as fp:
-    inputData = json.load(fp)
+    inputData = json.load(fp, object_pairs_hook=OrderedDict)
 
 
-
-
+flippedBoards = [1,2,5,7]
 
 #Plotting
 fig, ax = plt.subplots(figsize=(6,10))
 
 resetRectangles = []
 for (iBoard,iVMM) in [(x,y) for x in xrange(4) for y in xrange(8)]:
-    # resetRectangles.append(
-    #     patches.Rectangle(
-    #         ((iBoard/8.)+0.02, (iVMM/8.)+0.02 ), (1/8.)-0.04, (1/8.)-0.04,
-    #         alpha=1, facecolor="white"
-    #     )
-    # )
-    resetRectangles.append(
-        patches.Rectangle(
-            ((iBoard/8.)+0.02, (iVMM/8.)+0.02 ), (1/8.)-0.04, (1/8.)-0.04,
-            alpha=0.1
+
+    resetRectangles.append( patches.Rectangle( (0.01,0), width=0.49, height=0.99 ,fill=False)  )
+    resetRectangles.append( patches.Rectangle( (0.51,0), width=0.49, height=0.99 ,fill=False)  )
+    for iHalf in [0,1]:
+        offset = 0.5
+        resetRectangles.append(
+            patches.Rectangle(
+                ((iBoard/8.)+0.02+iHalf*offset, (iVMM/8.)+0.02 ), (1/8.)-0.04, (1/8.)-0.04,
+                alpha=0.1
+            )
         )
-    )
 
 def resetDisplay():
     ax.cla()
+    labels = ["B%d"%i for i in xrange(8)]
+    ax.set_xticks(np.arange(1/16., 17/16.,1/8.))
+    ax.set_yticks([])
+    ax.set_xticklabels(labels)
     for p in resetRectangles:
         ax.add_patch(p)
 
 
 resetDisplay()
 
-# ax.set_xlabel('Detector Phi')
-# ax.set_ylabel('r (xy) [mm]')
-
 events = []
+bcidList = []
 
-for timestamp in inputData:
-    for iEvent in inputData[timestamp]:
-        if len(iEvent[1]):
-            events.append(iEvent[1])
-
-# print events
+for BCID in inputData:
+    BCIDp1 = "%d"%(int(BCID)+1)
+    if BCIDp1 in inputData and len(inputData[BCID])+len(inputData[BCIDp1]):
+        events.append( (inputData[BCID],inputData[BCIDp1]) )
+        bcidList.append( (BCID,BCIDp1) )
 
 
 def plot(i):
@@ -78,19 +79,28 @@ def plot(i):
     rectangles = []
     x = []
     y = []
-    for iHit in events[i]:
-        (iBoard, iVMM, iStrip) = iHit
-        rectangles.append(
-            patches.Rectangle(
-                ((iBoard/8.)+0.02, (iVMM/8.)+0.02 ), (1/8.)-0.04, (1/8.)-0.04,
-                alpha=0.4, facecolor="red"
+    offset = 0.5
+    for iHalf in [0,1]:
+        for iHit in events[i][iHalf]:
+            (iBoard, iVMM, iStrip) = iHit
+            VMMLocation = iVMM/8.
+            if iBoard in flippedBoards:
+                VMMLocation = (7-iVMM)/8.
+
+            rectangles.append(
+                patches.Rectangle(
+                    ((iBoard/8.)+0.02+offset*iHalf, (VMMLocation)+0.02 ), (1/8.)-0.04, (1/8.)-0.04,
+                    alpha=0.4, facecolor="red"
+                )
             )
-        )
-        x.append(  (iBoard/8.)+0.06   )
-        y.append(  (iVMM/8.)+0.02 + ((1/8.)-0.04 ) * (iStrip/64.)    )
+
+            x.append(  (iBoard/8.)+0.06+offset*iHalf   )
+            y.append(  (VMMLocation)+0.02 + ((1/8.)-0.04 ) * (iStrip/64.)    )
     for p in rectangles:
         ax.add_patch(p)
     ax.scatter(x, y)
+    ax.text(0.1,-0.03,bcidList[i][0])
+    ax.text(0.6,-0.03,bcidList[i][1])
 
 plot(0)
 
@@ -122,9 +132,9 @@ if __name__ == '__main__':
             os.makedirs(outputDirectory)
 
     # FuncAnimation will call the 'update' function for each frame; here
-    # animating over 10 frames, with an interval of 200ms between frames.
+    # animating over N frames, with an interval of 200ms between frames.
     if options.animate:
-        anim = FuncAnimation(fig, animate, frames=np.arange(0, len(events)), interval=200)
+        anim = FuncAnimation(fig, animate, frames=np.arange(0, len(events)), interval=500)
         if options.save:
             imageName = 'Output/EventDisplay.gif'
             anim.save(imageName, dpi=80, writer='imagemagick')
