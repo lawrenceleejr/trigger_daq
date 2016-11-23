@@ -47,8 +47,8 @@ def main(argv):
     for line in datafile:
         if str(line[0:4]) =='TIME':
             decodedfile.write('\n'+line)
-            timestamp = line.rstrip()
-            outputData[timestamp] = []
+            # timestamp = line.rstrip()
+            # outputData[timestamp] = []
             continue
         lines.append(line[:len(line)-1])
         if len(lines) == 4:
@@ -92,11 +92,15 @@ def main(argv):
             decodedfile.write( '  CH: {: >30}\n'.format( " ".join( reversedVMMStringData[:len(vmmlist)] ) if len(vmmlist) else "N/A" ) )
             ### here the list is truncated.. make sure that's what I'm supposed to do...
 
-            outputData[timestamp].append(
-                                            ( int(bcid,16),
-                                              zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
-                                            )
-                                        )
+            # outputData[timestamp].append(
+            #                                 ( int(bcid,16),
+            #                                   zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
+            #                                 )
+            #                             )
+
+
+            outputData[int(bcid,16)] = zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
+
 
     with open(outputfile.split(".")[0]+".json", 'w') as outputJSONFile:
         json.dump(outputData, outputJSONFile)
