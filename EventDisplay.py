@@ -41,6 +41,10 @@ fig, ax = plt.subplots(figsize=(6,10))
 resetRectangles = []
 for (iBoard,iVMM) in [(x,y) for x in xrange(4) for y in xrange(8)]:
 
+    color = "blue"
+    if iBoard in flippedBoards:
+        color = "green"
+
     resetRectangles.append( patches.Rectangle( (0.01,0), width=0.49, height=0.99 ,fill=False)  )
     resetRectangles.append( patches.Rectangle( (0.51,0), width=0.49, height=0.99 ,fill=False)  )
     for iHalf in [0,1]:
@@ -48,7 +52,7 @@ for (iBoard,iVMM) in [(x,y) for x in xrange(4) for y in xrange(8)]:
         resetRectangles.append(
             patches.Rectangle(
                 ((iBoard/8.)+0.02+iHalf*offset, (iVMM/8.)+0.02 ), (1/8.)-0.04, (1/8.)-0.04,
-                alpha=0.1
+                alpha=0.1, color=color
             )
         )
 
@@ -67,11 +71,20 @@ resetDisplay()
 events = []
 bcidList = []
 
+iBCID = 0
+jBCID = 0
 for BCID in inputData:
-    BCIDp1 = "%d"%(int(BCID)+1)
-    if BCIDp1 in inputData and len(inputData[BCID])+len(inputData[BCIDp1]):
-        events.append( (inputData[BCID],inputData[BCIDp1]) )
-        bcidList.append( (BCID,BCIDp1) )
+    if iBCID == jBCID == 0:
+        iBCID = BCID
+    elif jBCID==0:
+        jBCID = BCID
+    if not jBCID==0 and not iBCID==0:
+        events.append( (inputData[jBCID],inputData[iBCID]) )
+        bcidList.append( (jBCID,iBCID) )
+        iBCID = jBCID = 0
+
+
+print bcidList
 
 
 def plot(i):
