@@ -32,8 +32,13 @@ parser.add_option("--json",    help   = "input json file", default="test.json")
 with open(options.json, 'r') as fp:
     inputData = json.load(fp, object_pairs_hook=OrderedDict)
 
+source = "simulation"
+# source = "testStand"
 
-flippedBoards = [1,2,5,7]
+if source=="testStand":
+    flippedBoards = [1,2,5,7]
+elif source == "simulation":
+    flippedBoards = []
 
 #Plotting
 fig, ax = plt.subplots(figsize=(6,10))
@@ -59,6 +64,8 @@ for (iBoard,iVMM) in [(x,y) for x in xrange(4) for y in xrange(8)]:
 def resetDisplay():
     ax.cla()
     labels = ["B%d"%i for i in xrange(8)]
+    directions = ["X","X","U","V","U","V","X","X"]
+    labels = ["%s %s"%(labels[x], directions[x]) for x in xrange(8)]
     ax.set_xticks(np.arange(1/16., 17/16.,1/8.))
     ax.set_yticks([])
     ax.set_xticklabels(labels)
@@ -71,18 +78,27 @@ resetDisplay()
 events = []
 bcidList = []
 
-iBCID = 0
-jBCID = 0
-for BCID in inputData:
-    if iBCID == jBCID == 0:
+if source=="testStand":
+    iBCID = 0
+    jBCID = 0
+    for BCID in inputData:
+        if iBCID == jBCID == 0:
+            iBCID = BCID
+        elif jBCID==0:
+            jBCID = BCID
+        if not jBCID==0 and not iBCID==0:
+            events.append( (inputData[jBCID],inputData[iBCID]) )
+            bcidList.append( (jBCID,iBCID) )
+            iBCID = jBCID = 0
+elif source=="simulation":
+    for BCID in inputData:
+        if "_1" in BCID:
+            continue
         iBCID = BCID
-    elif jBCID==0:
-        jBCID = BCID
-    if not jBCID==0 and not iBCID==0:
-        events.append( (inputData[jBCID],inputData[iBCID]) )
-        bcidList.append( (jBCID,iBCID) )
-        iBCID = jBCID = 0
-
+        jBCID = BCID+"_1"
+        if iBCID in inputData and jBCID in inputData:
+            events.append( (inputData[iBCID],inputData[jBCID]) )
+            bcidList.append( (iBCID,jBCID) )
 
 print bcidList
 
