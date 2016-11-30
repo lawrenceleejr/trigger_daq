@@ -9,7 +9,8 @@
 
 
 import sys, getopt,binstr
-
+import json
+import collections
 
 def main(argv):
     remapflag = 0
@@ -33,6 +34,8 @@ def main(argv):
 
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
+
+    outputData = collections.OrderedDict()
 
     eventnum = 0
     n = 5 #starting pt of data
@@ -92,6 +95,13 @@ def main(argv):
                               + ' ' + str(vmmdata[1])\
                               + ' ' + str(vmmdata[0])\
                               + '\n')
+
+            outputData[int(bcid,16)] = zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
+
+
+    with open(outputfile.split(".")[0]+".json", 'w') as outputJSONFile:
+        json.dump(outputData, outputJSONFile)
+
     decodedfile.close()
     datafile.close()
     print "done decoding, exiting \n"
