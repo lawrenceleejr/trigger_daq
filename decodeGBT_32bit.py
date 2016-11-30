@@ -96,7 +96,11 @@ def main(argv):
                               + ' ' + str(vmmdata[0])\
                               + '\n')
 
-            outputData[int(bcid,16)] = zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
+            tmpKey = str(int(bcid,16))
+            if tmpKey in outputData:
+                tmpKey = tmpKey+"_1"
+            print tmpKey
+            outputData[tmpKey] = zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
 
 
     with open(outputfile.split(".")[0]+".json", 'w') as outputJSONFile:
