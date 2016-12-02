@@ -1,22 +1,22 @@
 # Receives UDP packets from the TP
 # Writes them into files depending on the address in the header
 
+# A.Wang, last edited Dec 2, 2016
+
 import sys, signal, struct, time
 from udp import udp_fun
 
-global bufsize
 #bufsize = 65536
 bufsize = 1000000
-global maxpkt
 maxpkt = 1024*4
-global UDP_PORT
 UDP_PORT = 6008
-global UDP_IP
 UDP_IP = ""
-global timeout
-timeout = 5
-global readInterval
 readInterval = 1
+sleeptime = 0.01
+
+# toggle this to print out timestamps (or not)
+timeflag = False
+
 def main():
     try:
         udp = udp_fun()
@@ -24,13 +24,13 @@ def main():
         print "Receiving from TP"
         print "Doesn't delete old file!"
         print "Ctrl+C to stop!"
+        print "Sleeping for: ", sleeptime
         udp.set_udp_port(UDP_PORT)
         udp.set_udp_ip(UDP_IP)
         rawsock = udp.udp_client(maxpkt,bufsize)
         while True:
             data, addr = udp.udp_recv(rawsock)
 #            print "received from ", addr
-            count = 1
 #            print data
             udpPacket = [data]
             # this assumes we receive the data in packets of 4 bytes, or 32 bits
@@ -53,21 +53,22 @@ def main():
                         wordout = wordout + byte
                         timestamp = time.time()*pow(10,9)
                         if (wordout == '000C') and (int(addrnum) == 21): #raw GBT packets
-                            myfile.write('TIME: ' + '%f'%timestamp + '\n')
+                            if (timeflag):
+                                myfile.write('TIME: ' + '%f'%timestamp + '\n')
                         if wordcount == 4:
                             if header[3] == 1:
-                                myfile.write('TIME: ' + '%f'%timestamp + '\n')
+                                if (timeflag):
+                                    myfile.write('TIME: ' + '%f'%timestamp + '\n')
                                 header[3] = 0
                             if header[0] == 1:
-                                myfile.write('TIME: ' + '%f'%timestamp + '\n')
+                                if (timeflag):
+                                    myfile.write('TIME: ' + '%f'%timestamp + '\n')
                                 header[0] = 0
                             myfile.write(str(wordout) + '\n')
                             wordout = ''
                             wordcount = 0
                 myfile.close()
-                count = 1
-                time.sleep(0.01)
-                count = count + 1
+                time.sleep(sleeptime)
     except KeyboardInterrupt:
         print "Stopped!"
         rawsock.close()

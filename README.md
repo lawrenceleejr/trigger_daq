@@ -6,6 +6,10 @@ daq scripts for MMTP
 
    `<cmdline> python udpRecDesp_32bit.py`
 
+*To write to the TP register:
+
+   `<cmdline> python regWrite.py -a <address> -m <message>`
+
 *To decode your files, use:
 
 -decodeGBT_32bit.py (for raw GBT packets)
@@ -14,7 +18,6 @@ daq scripts for MMTP
 
 -decodeFIND_32bit.py (for finder packets)
 
-Notice that there are 32bit versions and regular versions, depending on the format of your raw data file. Only the 32bit versions are up to date right now.
 
 *To run:
 
