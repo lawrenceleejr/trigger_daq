@@ -13,7 +13,7 @@
 # Options:
 # "r" for remapping (relevant only for ART pattern generator),
 # "f" for offsets (hardcoded numbers in only),
-# "oct" for octuplet geometry (flipped boards)
+# octgeo = 1 for octuplet geometry (flipped boards)
 
 # A.Wang, last edited Nov 21, 2016
 
