@@ -37,9 +37,9 @@ def main():
             datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(udpPacket[0])]
             if len(udpPacket)>0:
                 addrnum = datalist[7] # address number reading from
-#                    print "addr", int(addrnum)
+                # print "addr", int(addrnum)
                 del datalist[:8]
-#                    print datalist
+                # print datalist
                 wordcount = 0
                 header = [0,0,0,0] #20,21,22,23
                 with open("mmtp_test_%d.dat"%(int(addrnum)), "a") as myfile:
@@ -65,6 +65,7 @@ def main():
                                     myfile.write('TIME: ' + '%f'%timestamp + '\n')
                                 header[0] = 0
                             myfile.write(str(wordout) + '\n')
+                            print wordout
                             wordout = ''
                             wordcount = 0
                 myfile.close()
@@ -72,6 +73,6 @@ def main():
     except KeyboardInterrupt:
         print "Stopped!"
         rawsock.close()
-                
+
 if __name__ == "__main__":
     main()

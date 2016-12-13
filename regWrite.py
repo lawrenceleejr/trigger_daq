@@ -7,6 +7,9 @@
 
 import sys,socket,struct,getopt
 
+#turn on receiver
+#address is 32 bit  0005
+# l two sig bits: 3 (or 1) should enable
 
 def main(argv):
     address = ''
@@ -33,9 +36,16 @@ def main(argv):
 
     msg1 = "abcd1234"
     msg2 = "FE170002"
-    #msg3 = "00000005"
-    #msg4 = "00000003"
-    msg = [socket.htonl(int(msg1,16)),socket.htonl(int(msg2,16)),socket.htonl(int(address,16)),socket.htonl(int(message,16))]
+    msg3 = "00000005" #turn on UDP output
+    msg4 = "00000003"
+    # msg3 = "00000004" #reset
+    # msg4 = "0000020D" #20D (global), A0C (re), 60C (tr)
+    # msg4 = "0000020C" #bit 10 and bit 11 (transmit/re)
+    # msg = [socket.htonl(int(msg1,16)),socket.htonl(int(msg2,16)),socket.htonl(int(address,16)),socket.htonl(int(message,16))]
+    msg = [socket.htonl(int(msg1,16)),
+            socket.htonl(int(msg2,16)),
+            socket.htonl(int(msg3,16)),
+            socket.htonl(int(msg4,16))]
     msg = struct.pack("<4I",*msg)
     print repr(msg)
     sock.sendall(msg)
@@ -43,3 +53,4 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+# 
