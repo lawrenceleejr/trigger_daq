@@ -98,7 +98,7 @@ elif source=="simulation":
         jBCID = BCID+"_1"
         if iBCID in inputData and jBCID in inputData:
             events.append( (inputData[iBCID],inputData[jBCID]) )
-            bcidList.append( (iBCID,jBCID) )
+            bcidList.append( (iBCID,iBCID) )
 
 print bcidList
 
