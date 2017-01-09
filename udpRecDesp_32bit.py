@@ -17,7 +17,7 @@ sleeptime = 0.01
 # toggle this to print out timestamps (or not)
 timeflag = False
 
-def main():
+def udprec():
     try:
         udp = udp_fun()
         wordcount = 0
@@ -74,4 +74,4 @@ def main():
         rawsock.close()
                 
 if __name__ == "__main__":
-    main()
+    udprec()

@@ -37,7 +37,7 @@ def main(argv):
         pktData = str(line[0])
         fifoAddr = str(line[1])
         print pktData, fifoAddr
-       send_data(opensock,addr,pkt)
+        send_data(opensock,addr,pkt)
         time.sleep(0.3)
 
 def open_tcp(ip,port):
