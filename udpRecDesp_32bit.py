@@ -20,6 +20,7 @@ sleeptime = 0.01
 # toggle this to print out timestamps (or not)
 timeflag = False
 
+
 def main():
 
     parser = OptionParser(usage="usage: %prog [options] outputFileName")
