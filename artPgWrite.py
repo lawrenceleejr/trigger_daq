@@ -3,11 +3,13 @@
 # Adapted from artPgWrite.m
 # Writes 32 bit words and writes them to the TP FIFOs
 
-# Input data format: Column 1: 32 bit data word Column 2: FIFO reg address
+# Input data format: Column 1: 32 bit data word Column 2: FIFO reg address (2 hex digits)
 
-# A.Wang, last edited Oct. 26, 2016
+# A.Wang, last edited Jan 9, 2017
 
-import sys,socket,struct,getopt
+# Not yet tested
+
+import sys,socket,struct,getopt,time
 
 TCP_IP = "192.168.1.10"
 TCP_PORT = 7
@@ -34,9 +36,9 @@ def main(argv):
         line = rawline.split(" ")
         pktData = str(line[0])
         fifoAddr = str(line[1])
-        #print pktData, fifoAddr
-        send_data(opensock,addr,pkt)
-        sleep(0.3)
+        print pktData, fifoAddr
+       send_data(opensock,addr,pkt)
+        time.sleep(0.3)
 
 def open_tcp(ip,port):
     sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
