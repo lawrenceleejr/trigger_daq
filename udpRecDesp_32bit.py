@@ -9,7 +9,7 @@ from udp import udp_fun
 #bufsize = 65536
 bufsize = 1000000
 maxpkt = 1024*4
-UDP_PORT = 6008
+UDP_PORT = 
 UDP_IP = ""
 readInterval = 1
 sleeptime = 0.01
