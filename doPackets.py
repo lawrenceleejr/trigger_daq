@@ -8,10 +8,10 @@
 
 # Not yet tested
 
-import sys,artPgWrite,udpRecDesp_32bit,getopt,time
+import sys,artPgWrite,udpRecDesp_32bit,getopt,time,regWrite
 import multiprocessing as mp
 
-TCP_IP = "192.168.1.10"
+TCP_IP = "192.168.2.10"
 TCP_PORT = 7
 
 def main(argv):
@@ -30,23 +30,24 @@ def main(argv):
             print arg
             inputfile = arg
     
-    receivedata = mp.Process(target=udpRecDesp_32bit.udprec,args=())
+    receivedata = mp.Process(target=udpRecDesp_32bit.udp_rec,args=())
     time.sleep(1)
     writepackets = mp.Process(target=do,args=(inputfile,))
-    receivedata.start()
-    writepackets.start()
+    #receivedata.start()
+    #writepackets.start()
+    do(inputfile)
     time.sleep(10)
 #    receivedata.shutdown()
 
 def reset_bcid():
     # reset on
-    regWrite.writeToRegister(TCP_IP,TCP_PORT,sock,"00000001","00000002")
-    time.sleep(0.1)
+    regWrite.writeToRegister(TCP_IP,TCP_PORT,"00000001","00000002")
+    time.sleep(1)
     # reset off
-    regWrite.writeToRegister(TCP_IP,TCP_PORT,sock,"00000001","00000003")
+    regWrite.writeToRegister(TCP_IP,TCP_PORT,"00000001","00000003")
     time.sleep(0.1)
     # reset BCID
-    regWrite.writeToRegister(TCP_IP,TCP_PORT,sock,"00000001","00000004")
+    regWrite.writeToRegister(TCP_IP,TCP_PORT,"00000001","00000004")
     time.sleep(0.1)
 
 def do(inputfile):
