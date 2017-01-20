@@ -18,7 +18,7 @@ readInterval = 1
 sleeptime = 0.01
 
 # toggle this to print out timestamps (or not)
-timeflag = False
+timeflag = True
 
 global outputFileName
 outputFileName = ''
@@ -33,28 +33,32 @@ def main():
                       help="if the output file already exists don't overwrite it")
     (options, args) = parser.parse_args()
     global outputFileName
-    outputFileName = "mmtp_test" if len(args)==0 else args[0]
+    if len(args)==0:
+        outputFileName = "mmtp_test"
+    else:
+        outputFileName = args[0].split(".")[0] if ("." in args[0]) else args[0]
 
     if options.newFile:
         counter = 1
-        while os.path.exists(outputFileName):
+        while os.path.exists(outputFileName + ".dat"):
             outputFileName = outputFileName.split("__")[0]+"__%d"%counter
             counter += 1
+    print outputFileName
+    if not options.newFile:
+        print "Doesn't delete old file! If new file desired, add -n option."
     udp_rec()
+
 def udp_rec():
     try:
         udp = udp_fun()
         wordcount = 0
         print "Receiving from TP"
-#        if not options.newFile:
-#            print "Doesn't delete old file! If new file desired, add -n option."
         print "Ctrl+C to stop!"
         print "Sleeping for: ", sleeptime
         udp.set_udp_port(UDP_PORT)
         udp.set_udp_ip(UDP_IP)
         rawsock = udp.udp_client(maxpkt,bufsize)
 
-#        with open(outputFileName, "a") as myfile:
         while True:
             data, addr = udp.udp_recv(rawsock)
     #            print "received from ", addr

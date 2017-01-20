@@ -74,19 +74,19 @@ def main(argv):
                         boardlist.append((31-i)/8)
                         vmmlist.append((31-i)%8)
 
-            decodedfile.write( "BCID: {: >10}  Hitmap: {: >20}  Boards: ".format(int(bcid,16), hitmap ) )
+            decodedfile.write( "BCID: {0: >10}  Hitmap: {1: >20}  Boards: ".format(int(bcid,16), hitmap ) )
             reversedBoardList = reversed(boardlist)
             reversedBoardStringList = [str(x) for x in reversedBoardList]
-            decodedfile.write( '{: >30}'.format( " ".join( reversedBoardStringList ) if len(reversedBoardStringList) else "N/A" ) )
+            decodedfile.write( '{0: >30}'.format( " ".join( reversedBoardStringList ) if len(reversedBoardStringList) else "N/A" ) )
 
             decodedfile.write('  VMMs:')
             reversedVMMList = reversed(vmmlist)
             reversedVMMStringList = [str(x) for x in reversedVMMList]
-            decodedfile.write( '{: >30}'.format( " ".join( reversedVMMStringList ) if len(reversedVMMStringList) else "N/A" ) )
+            decodedfile.write( '{0: >30}'.format( " ".join( reversedVMMStringList ) if len(reversedVMMStringList) else "N/A" ) )
 
             reversedVMMData = reversed(vmmdata)
             reversedVMMStringData = [str(x) for x in reversedVMMData]
-            decodedfile.write( '  CH: {: >30}\n'.format( " ".join( reversedVMMStringData[:len(vmmlist)] ) if len(vmmlist) else "N/A" ) )
+            decodedfile.write( '  CH: {0: >30}\n'.format( " ".join( reversedVMMStringData[:len(vmmlist)] ) if len(vmmlist) else "N/A" ) )
             ### here the list is truncated.. make sure that's what I'm supposed to do...
 
             tmpKey = str(int(bcid,16))
