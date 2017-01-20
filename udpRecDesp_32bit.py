@@ -18,7 +18,10 @@ readInterval = 1
 sleeptime = 0.01
 
 # toggle this to print out timestamps (or not)
-timeflag = False
+timeflag = True
+
+global outputFileName
+outputFileName = ''
 
 def main():
 
@@ -29,42 +32,48 @@ def main():
                       default=False,
                       help="if the output file already exists don't overwrite it")
     (options, args) = parser.parse_args()
-
-    outputFileName = "mmtp_test.dat" if len(args)==0 else args[0]
+    global outputFileName
+    if len(args)==0:
+        outputFileName = "mmtp_test"
+    else:
+        outputFileName = args[0].split(".")[0] if ("." in args[0]) else args[0]
 
     if options.newFile:
         counter = 1
-        while os.path.exists(outputFileName):
+        while os.path.exists(outputFileName + ".dat"):
             outputFileName = outputFileName.split("__")[0]+"__%d"%counter
             counter += 1
+    print outputFileName
+    if not options.newFile:
+        print "Doesn't delete old file! If new file desired, add -n option."
+    udp_rec()
 
+def udp_rec():
     try:
         udp = udp_fun()
         wordcount = 0
         print "Receiving from TP"
-        if not options.newFile:
-            print "Doesn't delete old file! If new file desired, add -n option."
         print "Ctrl+C to stop!"
         print "Sleeping for: ", sleeptime
         udp.set_udp_port(UDP_PORT)
         udp.set_udp_ip(UDP_IP)
         rawsock = udp.udp_client(maxpkt,bufsize)
 
-        with open(outputFileName, "a") as myfile:
-            while True:
-                data, addr = udp.udp_recv(rawsock)
+        while True:
+            data, addr = udp.udp_recv(rawsock)
     #            print "received from ", addr
     #            print data
-                udpPacket = [data]
+            udpPacket = [data]
                 # this assumes we receive the data in packets of 4 bytes, or 32 bits
-                datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(udpPacket[0])]
-                if len(udpPacket)>0:
-                    addrnum = datalist[7] # address number reading from
+            datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(udpPacket[0])]
+            if len(udpPacket)>0:
+                addrnum = datalist[7] # address number reading from
                     # print "addr", int(addrnum)
-                    del datalist[:8]
+                del datalist[:8]
                     # print datalist
-                    wordcount = 0
-                    header = [0,0,0,0] #20,21,22,23
+                wordcount = 0
+                header = [0,0,0,0] #20,21,22,23
+                with open("%s_%d.dat"%(outputFileName,int(addrnum)),"a") as myfile:
                     wordout = ''
                     for byte in datalist:
                         if byte == 'A2': #finder data
@@ -81,7 +90,7 @@ def main():
                             if header[3] == 1:
                                 if (timeflag):
                                     myfile.write('TIME: ' + '%f'%timestamp + '\n')
-                                header[3] = 0
+                                    header[3] = 0
                             if header[0] == 1:
                                 if (timeflag):
                                     myfile.write('TIME: ' + '%f'%timestamp + '\n')
@@ -90,7 +99,8 @@ def main():
                             print wordout
                             wordout = ''
                             wordcount = 0
-                    time.sleep(sleeptime)
+                myfile.close()
+                time.sleep(sleeptime)
 
     except KeyboardInterrupt:
         print "Stopped!"

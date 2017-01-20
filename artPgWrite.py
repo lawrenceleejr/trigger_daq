@@ -5,11 +5,12 @@
 
 # Input data format: Column 1: 32 bit data word Column 2: FIFO reg address (2 hex digits)
 
-# A.Wang, last edited Jan 9, 2017
+# A.Wang, last edited Jan 16, 2017
 
 # Not yet tested
+# basically the same as doPackets with less shit
 
-import sys,socket,struct,getopt,time
+import sys,socket,struct,getopt,time,regWrite
 
 TCP_IP = "192.168.1.10"
 TCP_PORT = 7
@@ -31,28 +32,17 @@ def main(argv):
 
     # Opening file and sending
     datafile = open(inputfile, 'r')
-    opensock = open_tcp(TCP_IP,TCP_PORT)
+    print "Sending ART Data"
+    #sending data
     for rawline in datafile:
         line = rawline.split(" ")
         pktData = str(line[0])
         fifoAddr = str(line[1])
-        print pktData, fifoAddr
-       send_data(opensock,addr,pkt)
+        fifoAddr = "000000"+fifoAddr
+        print pktData, fifoAddr        
+        regWrite.writeToRegister(TCP_IP,TCP_PORT,fifoAddr,pktData)
         time.sleep(0.3)
-
-def open_tcp(ip,port):
-    sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    sock.connect((ip,port))
-    return sock
-
-def send_data(sock,addr,pkt):
-    header = "abcd1234"
-    type = "FE170002"
-    addr = "000000"+addr
-    msg = [socket.htonl(int(msg1,16)),socket.htonl(int(msg2,16)),socket.htonl(int(addr,16)),socket.htonl(int(pkt,16))]
-    msg = struct.pack("<4I",*msg)
-    sock.sendall(msg)
-    sock.close()
+    datafile.close()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
