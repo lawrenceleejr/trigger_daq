@@ -1,0 +1,64 @@
+# taken from nsw elx svn
+reset_hw_axi [get_hw_axis]
+
+set 20 ""
+set 21 ""
+set txn_cnt 0
+set infile [open ../../scripts/infile.txt  r]
+set outfile [open logfile.txt w]
+while {-1 != [gets $infile command]} {
+    set lst [split $command]
+set addr [lindex $lst 1]
+lappend $addr [lindex $lst 0]
+
+}
+close $infile
+close $outfile
+
+
+create_hw_axi_txn fifoFlags0 -address 0x04 -type read  [get_hw_axis hw_axi_1]
+
+puts [llength $20]
+while {[llength $20] >= 16} {
+set file_data [lrange $20 0 15]
+set txn_name [concat write_txn$txn_cnt]
+create_hw_axi_txn $txn_name -type WRITE -address 0x80 -data $file_data -size 32 -len 16 -burst fixed [get_hw_axis hw_axi_1]
+set 20 [lreplace $20 0 15]
+incr txn_cnt
+puts $txn_cnt
+}
+
+while {[llength $21] >= 16} {
+set file_data [lrange $21 0 15]
+set txn_name [concat write_txn$txn_cnt]
+create_hw_axi_txn $txn_name -type WRITE -address 0x84 -data $file_data -size 32 -len 16 -burst fixed [get_hw_axis hw_axi_1]
+set 21 [lreplace $21 0 15]
+incr txn_cnt
+puts $txn_cnt
+}
+
+
+puts [lrange $21 0 end]
+puts done
+create_hw_axi_txn fifoFlags1 -address 0x04 -type read  [get_hw_axis hw_axi_1]
+
+create_hw_axi_txn ena_addc_fifo -type WRITE -address 0x14 -data 0x00000003 -size 32 [get_hw_axis hw_axi_1]
+
+create_hw_axi_txn start_daq -type WRITE -address 0x04 -data 0x00000001 -size 32 [get_hw_axis hw_axi_1]
+
+run_hw_axi -verbose [get_hw_axi_txns]
+delete_hw_axi_txn [get_hw_axi_txns *]
+ 
+
+ after [expr {int(2 * 1000)}]
+
+create_hw_axi_txn fifoFlags2 -address 0x04 -type read  [get_hw_axis hw_axi_1]
+
+create_hw_axi_txn stop_daq -type WRITE -address 0x04 -data 0x00000011 -size 32 [get_hw_axis hw_axi_1]
+
+
+create_hw_axi_txn fifoFlags4 -address 0x04 -type read  [get_hw_axis hw_axi_1]
+
+
+run_hw_axi -verbose [get_hw_axi_txns]
+delete_hw_axi_txn [get_hw_axi_txns *]
