@@ -82,10 +82,14 @@ def main(argv):
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
     offsets = ["856","85B","84A","84F","84A","84F","856","85B"]
     overall_offset = "C00"
-
+    nevent = 0
     for line in datafile:
         if str(line[0:4]) =='TIME':
-            decodedfile.write('\n'+line)
+            nevent = nevent + 1
+            timestamp = int(float(line[6:-1]))
+            timestampsec = timestamp/pow(10,9)
+            timestampns = timestamp%pow(10,9)
+            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
             continue
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9
