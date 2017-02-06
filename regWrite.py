@@ -2,8 +2,8 @@
 
 # Writes a message to registers
 
-# A.Wang, last edited Feb 6, 2016
-# L.Lee edited Jan 12, 2016
+# A.Wang, last edited Feb 6, 2017
+# L.Lee edited Jan 12, 2017
 
 import sys,socket,struct,getopt,os,itertools
 
@@ -56,7 +56,7 @@ def main(argv):
         address.append("00000004")
         message.append("0000020D") #20D (global), A0C (re), 60C (tr)
         address.append("00000004")
-        message.append("0000020D") #bit 10 and bit 11 (transmit/re)
+        message.append("0000020C") #bit 10 and bit 11 (transmit/re)
     if udpOutput:
         print "called with opt -u: Turning on UDP output from FIFO 21!"
         address.append("00000005")
