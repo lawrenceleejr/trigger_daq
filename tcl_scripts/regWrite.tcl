@@ -1,11 +1,11 @@
 # Attempting to open ADDC links via TCL
 
-# A. Wang, last edited Jan 22, 2017
+# A. Wang, last edited Feb 6, 2017
 
 reset_hw_axi [get_hw_axis]
 
-set txn_addr 00000005
-set txn_data 00000003
+set txn_addr [lindex $argv 0]
+set txn_data [lindex $argv 1]
 
 puts "Writing $txn_data to $txn_addr"
 

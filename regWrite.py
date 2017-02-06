@@ -5,38 +5,42 @@
 # A.Wang, last edited Feb 6, 2016
 # L.Lee edited Jan 12, 2016
 
-import sys,socket,struct,getopt
+import sys,socket,struct,getopt,os,itertools
 
 def main(argv):
     """User interface for writing to registers"""
 
-    address = ''
-    message = ''
+    address = []
+    message = []
     resetGBT = False
     udpOutput = False
     fifoInOn = False
     fifoInOff = False
+    jtag = False
 
     ip,port = '192.168.2.10','7'
 
     try:
         opts, args = getopt.getopt(argv, "hi:p:a:m:rue", ["ip=","port=","address=", "message=",\
-                                                          "resetGBT","udoOutput","fe=","fifoInEna="])
+                                                          "resetGBT","udoOutput","fe=","fifoInEna=",\
+                                                          "jtag"])
     except getopt.GetoptError:
-        print 'regWrite.py -a <addr> -m <msg>'
+        print 'regWrite.py -a <addr> -m <msg> [--jtag]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'regWrite.py -a <addr> -m <msg>'
+            print 'regWrite.py -a <addr> -m <msg> [--jtag]'
             sys.exit()
+        elif opt in ("--jtag"):
+            jtag = True
         elif opt in ("-i", "--ip"):
             ip = arg
         elif opt in ("-p", "--port"):
             port = arg
         elif opt in ("-a", "--address"):
-            address = arg
+            address.append(arg)
         elif opt in ("-m", "--message"):
-            message = arg
+            message.append(arg)
         elif opt in ("-r", "--resetGBT"):
             resetGBT = True
         elif opt in ("-u", "--udpOutput"):
@@ -49,20 +53,32 @@ def main(argv):
 
     if resetGBT:
         print "called with opt -r: Resetting GBT transceiver!"
-        writeToRegister(ip, port, "00000004", "0000020D")  #20D (global), A0C (re), 60C (tr)
-        writeToRegister(ip, port, "00000004", "0000020C")  #bit 10 and bit 11 (transmit/re)
+        address.append("00000004")
+        message.append("0000020D") #20D (global), A0C (re), 60C (tr)
+        address.append("00000004")
+        message.append("0000020D") #bit 10 and bit 11 (transmit/re)
     if udpOutput:
         print "called with opt -u: Turning on UDP output from FIFO 21!"
-        writeToRegister(ip, port, "00000005", "00000003")
+        address.append("00000005")
+        message.append("00000003")
     if fifoInOn:
         print "called with opt -fe 1: Enabling input FIFOs!"
-        writeToRegister(ip, port, "00000006", "FFFFFFFF")
+        address.append("00000006")
+        message.append("FFFFFFFF")
     if fifoInOff:
         print "called with opt -fe 0: Disabling input FIFOs!"
-        writeToRegister(ip, port, "00000006", "00000000")
-    if address and message:
-        writeToRegister(ip, port, address, message)
+        address.append("00000006")
+        message.append("00000000")
+    if (jtag is False):
+        for (a,m) in itertools.izip(address,message):
+            print (a,m)
+            writeToRegister(ip, port, a, m)
+    else:
+        for (a,m) in itertools.izip(address,message):
+#            os.system("ls")
+            os.system("vivado -mode batch -source tcl_scripts/regWrite.tcl -tclargs " + str(a) + " " + str(m))
 
+        
 
 
 def writeToRegister(ip,port,address,message):
