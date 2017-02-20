@@ -85,14 +85,16 @@ def main(argv):
     nevent = 0
     for line in datafile:
         if str(line[0:4]) =='TIME':
-            nevent = nevent + 1
+#            nevent = nevent + 1
             timestamp = int(float(line[6:-1]))
             timestampsec = timestamp/pow(10,9)
             timestampns = timestamp%pow(10,9)
-            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
+#            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
             continue
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9
+            nevent = nevent + 1
+            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
             print lines
             header = lines[0] #contains constants + BCID
             bcid = header[4:]
