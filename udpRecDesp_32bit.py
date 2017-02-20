@@ -15,7 +15,7 @@ maxpkt = 1024*4
 UDP_PORT = 6008
 UDP_IP = ""
 readInterval = 1
-sleeptime = 0.01
+sleeptime = 0.0001
 
 # toggle this to print out timestamps (or not)
 timeflag = True
