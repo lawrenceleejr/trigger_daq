@@ -10,8 +10,8 @@ from optparse import OptionParser
 import os.path
 
 #bufsize = 65536
-bufsize = 1000000
-maxpkt = 1024*4
+bufsize = 100000000
+maxpkt = 1024*8
 UDP_PORT = 6008
 UDP_IP = ""
 readInterval = 1
@@ -62,7 +62,6 @@ def udp_rec():
         while True:
             data, addr = udp.udp_recv(rawsock)
     #            print "received from ", addr
-    #            print data
             udpPacket = [data]
                 # this assumes we receive the data in packets of 4 bytes, or 32 bits
             datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(udpPacket[0])]
@@ -75,6 +74,9 @@ def udp_rec():
                 header = [0,0,0,0] #20,21,22,23
                 with open("%s_%d.dat"%(outputFileName,int(addrnum)),"a") as myfile:
                     wordout = ''
+                    fittime = time.time()*pow(10,9)
+                    if (int(addrnum)) == 22:
+                        myfile.write('TIME: ' + '%f'%fittime + '\n')
                     for byte in datalist:
                         if byte == 'A2': #finder data
                             header[3] = 1
