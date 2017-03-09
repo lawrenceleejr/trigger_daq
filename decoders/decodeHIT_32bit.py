@@ -15,6 +15,13 @@
 # "f" for offsets (hardcoded numbers in only),
 # currently octgeo = 1, for octuplet geometry (flipped boards)
 
+
+# Written out as:
+# X3 X2
+# V1 U1
+# V0 U0
+# X1 X0
+
 # A.Wang, last edited Nov 21, 2016
 
 
@@ -28,7 +35,8 @@ def decode(offsetflag, remapflag, octgeo, overall_offset, offsets, remapping, hi
     else:
         strip = int(hit[id*4:id*4+4],16)
     if strip is not 0:
-        if ((ip == 0) or (ip == 3) or (ip == 5) or (ip == 6)) and (octgeo == 1):
+#        if ((ip == 0) or (ip == 3) or (ip == 5) or (ip == 6)) and (octgeo == 1):
+        if ((ip == 1) or (ip == 2) or (ip == 4) or (ip == 7)) and (octgeo == 1):
             strip = 512-strip-1
         if remapflag == 1:
             ivmm = remapping[strip/64]%8
@@ -80,7 +88,7 @@ def main(argv):
     chs = [] #channel number
 
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
-    offsets = ["856","85B","84A","84F","84A","84F","856","85B"]
+    offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])
     overall_offset = "C00"
 
     for line in datafile:
