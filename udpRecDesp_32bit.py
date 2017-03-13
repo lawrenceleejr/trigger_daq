@@ -75,7 +75,8 @@ def udp_rec():
                 with open("%s_%d.dat"%(outputFileName,int(addrnum)),"a") as myfile:
                     wordout = ''
                     fittime = time.time()*pow(10,9)
-                    if (int(addrnum)) == 22:
+                    #if (int(addrnum)) == 22:
+                    if (timeflag):
                         myfile.write('TIME: ' + '%f'%fittime + '\n')
                     for byte in datalist:
                         if byte == 'A2': #finder data
@@ -85,18 +86,18 @@ def udp_rec():
                         wordcount = wordcount + 1
                         wordout = wordout + byte
                         timestamp = time.time()*pow(10,9)
-                        if (wordout == '000C') and (int(addrnum) == 21): #raw GBT packets
-                            if (timeflag):
-                                myfile.write('TIME: ' + '%f'%timestamp + '\n')
+                        # if (wordout == '000C') and (int(addrnum) == 21): #raw GBT packets
+                        #     if (timeflag):
+                        #         myfile.write('TIME: ' + '%f'%timestamp + '\n')
                         if wordcount == 4:
-                            if header[3] == 1:
-                                if (timeflag):
-                                    myfile.write('TIME: ' + '%f'%timestamp + '\n')
-                                    header[3] = 0
-                            if header[0] == 1:
-                                if (timeflag):
-                                    myfile.write('TIME: ' + '%f'%timestamp + '\n')
-                                header[0] = 0
+                            # if header[3] == 1:
+                            #     if (timeflag):
+                            #         myfile.write('TIME: ' + '%f'%timestamp + '\n')
+                            #         header[3] = 0
+                            # if header[0] == 1:
+                            #     if (timeflag):
+                            #         myfile.write('TIME: ' + '%f'%timestamp + '\n')
+                            #     header[0] = 0
                             myfile.write(str(wordout) + '\n')
                             print wordout
                             wordout = ''

@@ -2,7 +2,7 @@
 
 # Writes a message to registers
 
-# A.Wang, last edited Feb 6, 2017
+# A.Wang, last edited Mar 13, 2017
 # L.Lee edited Jan 12, 2017
 
 import sys,socket,struct,getopt,os,itertools
@@ -13,23 +13,34 @@ def main(argv):
     address = []
     message = []
     resetGBT = False
-    udpOutput = False
-    fifoInOn = False
-    fifoInOff = False
+    gbtInput = False
+    fifoOff = False
+    fifoOn = False
+    fifos = ""
     jtag = False
 
     ip,port = '192.168.2.10','7'
 
     try:
-        opts, args = getopt.getopt(argv, "hi:p:a:m:rue", ["ip=","port=","address=", "message=",\
-                                                          "resetGBT","udoOutput","fe=","fifoInEna=",\
+        opts, args = getopt.getopt(argv, "hi:p:a:m:rue:", ["ip=","port=","address=", "message=",\
+                                                          "resetGBT","gbtInput","fe=","fifoOutEna=",\
+                                                          "df=",\
                                                           "jtag"])
     except getopt.GetoptError:
         print 'regWrite.py -a <addr> -m <msg> [--jtag]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'regWrite.py -a <addr> -m <msg> [--jtag]'
+            print 'Usage: regWrite.py -a <addr> -m <msg> [--jtag]'
+            print 'Options: '
+            print '-a            specifies address to send to'
+            print '-m            specifies message sent'
+            print '-i            specifies IP'
+            print '-p            specifies port'
+            print '-r            resets GBT transciever'
+            print '-u            enables gbt input to FIFOs'
+            print '-e <0 or 1>   enables all or no FIFO outputs'
+            print '--df "1111"   enables select FIFO outputs, specified by 4 bits'
             sys.exit()
         elif opt in ("--jtag"):
             jtag = True
@@ -43,13 +54,19 @@ def main(argv):
             message.append(arg)
         elif opt in ("-r", "--resetGBT"):
             resetGBT = True
-        elif opt in ("-u", "--udpOutput"):
-            udpOutput = True
-        elif opt in ("-e","--fe", "--fifoInEna"):
+        elif opt in ("-u", "--gbtInput"):
+            gbtInput = True
+        elif opt in ("-e","--fe", "--fifoOutEna"):
             if (int(arg) == 1):
-                fifoInOn = True
+                fifoOn = True
             else:
-                fifoInOff = True
+                fifoOff = True
+        elif opt in ("--df"):
+            if (len(arg))==4:
+                fifos = arg
+            else:
+                print "Invalid argument for --df!"
+                sys.exit()
 
     if resetGBT:
         print "called with opt -r: Resetting GBT transceiver!"
@@ -57,18 +74,25 @@ def main(argv):
         message.append("0000020D") #20D (global), A0C (re), 60C (tr)
         address.append("00000004")
         message.append("0000020C") #bit 10 and bit 11 (transmit/re)
-    if udpOutput:
-        print "called with opt -u: Turning on UDP output from FIFO 21!"
+    if gbtInput:
+        print "called with opt -u: Turning on GBT input!"
         address.append("00000005")
         message.append("00000003")
-    if fifoInOn:
-        print "called with opt -fe 1: Enabling input FIFOs!"
+    if fifoOn:
+        print "called with opt --fe 1: Enabling all output FIFOs!"
         address.append("00000006")
         message.append("FFFFFFFF")
-    if fifoInOff:
-        print "called with opt -fe 0: Disabling input FIFOs!"
+    if fifoOff:
+        print "called with opt --fe 0: Disabling all output FIFOs!"
         address.append("00000006")
         message.append("00000000")
+    if len(fifos) > 0:
+        print "called with opt --df, enabling the following FIFOs:"
+        for ind,elem in enumerate(list(fifos)[::-1]):
+            if (int(elem)==1):
+                print "fifo 2"+str(ind)
+        address.append("00000006")
+        message.append("FFFFFFF"+"{0:1X}".format((int(fifos,2))))
     if (jtag is False):
         for (a,m) in itertools.izip(address,message):
             print (a,m)
