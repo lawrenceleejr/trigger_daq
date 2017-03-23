@@ -26,17 +26,19 @@ parser.add_option("--valinit", help   = "initial z bin", default=0)
 parser.add_option("--animate", help = "animate!",action="store_true", default=False)
 parser.add_option('--save',    help = "save as a file instead of showing. if saving doesn't work, make sure you have imagemagick installed. `brew install imagemagick` if you have homebrew.",action="store_true", default=False)
 parser.add_option("--json",    help   = "input json file", default="test.json")
+parser.add_option("--nevents", help   = "number of", default=500)
 (options, args) = parser.parse_args()
 
 
 with open(options.json, 'r') as fp:
     inputData = json.load(fp, object_pairs_hook=OrderedDict)
 
-source = "simulation"
-# source = "testStand"
+# source = "simulation"
+source = "testStand"
 
 if source=="testStand":
-    flippedBoards = [1,2,5,7]
+    flippedBoards = [0,3,5,6]
+    # flippedBoards = [1,2,5,7]
 elif source == "simulation":
     flippedBoards = []
 
@@ -45,7 +47,7 @@ fig, ax = plt.subplots(figsize=(6,10))
 
 resetRectangles = []
 for (iBoard,iVMM) in [(x,y) for x in xrange(4) for y in xrange(8)]:
-
+    # print iBoard,iVMM
     color = "blue"
     if iBoard in flippedBoards:
         color = "green"
@@ -87,8 +89,12 @@ if source=="testStand":
         elif jBCID==0:
             jBCID = BCID
         if not jBCID==0 and not iBCID==0:
-            events.append( (inputData[jBCID],inputData[iBCID]) )
-            bcidList.append( (jBCID,iBCID) )
+            # if len(inputData[jBCID])+len(inputData[iBCID])==0:
+            #     continue
+            print (len(inputData[jBCID])+len(inputData[iBCID]) )
+            if (len(inputData[jBCID])+len(inputData[iBCID]) )>0:
+                events.append( (inputData[jBCID],inputData[iBCID]) )
+                bcidList.append( (jBCID,iBCID) )
             iBCID = jBCID = 0
 elif source=="simulation":
     for BCID in inputData:
@@ -100,7 +106,9 @@ elif source=="simulation":
             events.append( (inputData[iBCID],inputData[jBCID]) )
             bcidList.append( (iBCID,iBCID) )
 
-print bcidList
+# events = events[:options.nevents]
+# print events
+# print bcidList
 
 
 def plot(i):
@@ -109,11 +117,13 @@ def plot(i):
     x = []
     y = []
     offset = 0.5
+    # print "plotting..."
     for iHalf in [0,1]:
         for iHit in events[i][iHalf]:
+            # print iHit
             (iBoard, iVMM, iStrip) = iHit
             VMMLocation = iVMM/8.
-            if iBoard in flippedBoards:
+            if bool(iBoard in flippedBoards) != bool(iHalf):
                 VMMLocation = (7-iVMM)/8.
 
             rectangles.append(
