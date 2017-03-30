@@ -21,8 +21,8 @@ DAQ scripts for MMTP
 
 * Various options for regWrite include:
   * [-r] Reset GBT transceiver connection  
-  * [-u] Turn on UDP output from FIFO 21  
-  * [--fe] Enable/Disable TP input FIFOs receiving GBT packets from ADDC, requires arg 0 or 1
+  * [-u] Turn on GBT input to FIFOs  
+  * [--fe] Enable/Disable TP output FIFOs, requires arg 0 or 1
   * [--jtag] Use jtag commands instead (has not been tested, requires vivado), calls tcl scripts  
 
 ## TP Output Decoding ##
