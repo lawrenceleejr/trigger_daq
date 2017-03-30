@@ -27,7 +27,7 @@ def setstyle():
 
 def processData(A, B, inline, flagA):
     'Takes a line with hits and parses it'
-    if (flagA):
+    if (flagA): # flagA => ADDC A got data
         A["b"].append(int(inline[0]))
         A["vmm"].append(int(inline[1]))
         A["ch"].append(int(inline[2]))
@@ -35,7 +35,7 @@ def processData(A, B, inline, flagA):
             A["x"].append(int(inline[0]))
         else:
             A["uv"].append(int(inline[0]))
-    else:
+    else: # ADDC B got data
         B["b"].append(int(inline[0]))
         B["vmm"].append(int(inline[1]))
         B["ch"].append(int(inline[2]))
@@ -102,7 +102,7 @@ def main(argv):
 
     addcBCID = [-1,-1]
     flags = [False,False] # flags for which ADDC we are looking at
-    restartBCID = False # new event, restart BCID
+    restartBCID_b = False # new event, restart BCID counters
     
     A = {"b":[],"vmm":[],"ch":[],"x":[],"uv":[]}
     B = {"b":[],"vmm":[],"ch":[],"x":[],"uv":[]}
@@ -121,21 +121,21 @@ def main(argv):
             if (int(inline[3]) !=0):
                 nhit = int(inline[3])
             # reset flags
-            flags = [False,False]
+            flags = [False,False] # says which ADDC we are parsing data from
             for i,flag in enumerate(flags):
                 # check which addc bcid the event matches
                 if (abs(bcid-addcBCID[i]) == 1 or abs(bcid-addcBCID[i]) == 4095):
                     addcBCID[i] = bcid
                     flags[i] = True
                     bufferlen[i] = bufferlen[i] + 1
-                    if (i==0):
+                    if (i == 0): # increment buffer length only once per pair of ADDC packets
                         addbufferlen = addbufferlen + 1
 #                    print "ADDC, BCID"
 #                    print i,bcid
-            if (restartBCID): # let's restart ADDC B bcid counter                
+            if (restartBCID_b): # let's restart ADDC B bcid counter
                 addcBCID[1] = bcid
                 flags[1] = True
-                restartBCID = False
+                restartBCID_b = False
             if not any(flags): # BCIDs make a jump, so we expect a new event
                 if (eventN > 0):
                     deltaC = [cbuff[i]-firstbuff[i]+1 for i in range(2)]
@@ -157,7 +157,6 @@ def main(argv):
                     h_beginBuff.Fill(firstaddbuff)
                     h_coincBuff.Fill(caddbuff)
                     h_bufflen.Fill(addbufferlen)
-                restartBCID = True
                 eventN = eventN + 1
                 if (eventN % 10000 ==0):
                     print "Processing event",eventN
@@ -179,6 +178,7 @@ def main(argv):
                 deltaC_add = -1
 
                 foundCoinc = False
+                restartBCID_b = True # next event, we can automatically reset BCID for ADDC B
                 
                 # clear out data
                 A = {"b":[],"vmm":[],"ch":[],"x":[],"uv":[]}
@@ -186,37 +186,38 @@ def main(argv):
             if all(flags):
                 print "Error! BCIDs of ADDCs became synched!"
                 sys.exit(2)
-        else:
-            ind_data = bufferlen
-#            print "data",ind_data
+        else: # reading data
             if (nhit != 0 and len(inline) > 1):
                 for i in range(2):
-                    if (firstbuff[i] < 0 and flags[i]):
+                    if (firstbuff[i] < 0 and flags[i]): # if buffer hasn't been set yet
                         firstbuff[i] = bufferlen[i]
                 if (firstaddbuff < 0):
                     firstaddbuff = addbufferlen
-                A,B=processData(A, B, inline, flags[0])
+
+                A,B = processData(A, B, inline, flags[0])
                 nhit = nhit - 1
+
+                # update end of data point
                 for i in range(2):
                     if (flags[i]):
                         lastbuff[i] = bufferlen[i]
-#                lastbuff = [bufferlen[i] for i in range(2)]
                 lastaddbuff = addbufferlen
+
                 # print "first, last"
                 # print firstaddbuff,lastaddbuff
                 # print "first a , last a"
                 # print firstbuff[0],lastbuff[0]
                 # print "first b , last b"
                 # print firstbuff[1],lastbuff[1]
+                
             if ((len(A["uv"])+len(B["uv"])) > 0 and len(A["x"]) > 0 and len(B["x"]) > 0):
-#                print "Coincidence!",bufferlen
                 if not(foundCoinc):
                     cbuff = [bufferlen[i] for i in range(2)]
                     caddbuff = addbufferlen
                 foundCoinc = True
+
+        # this might be useless
         if (nhit == 0):
- #           print "A",A["b"]
- #           print "B",B["b"]
             nhit = -1
 
     # plotting!
