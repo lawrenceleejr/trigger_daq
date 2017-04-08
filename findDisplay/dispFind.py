@@ -1,7 +1,10 @@
-## event display for testFIND
-## testFIND events generated from decodeFIND_32bit.py and mmtp_test_23.dat files
-## output from FINDER is stored in TP fifo 23, this is a way of visualizing
-## those events
+# event display for testFIND
+# testFIND events generated from decodeFIND_32bit.py and mmtp_test_23.dat files
+# output from FINDER is stored in TP fifo 23, this is a way of visualizing
+# those events
+
+# to run live do:
+#   > python dispFind.py -l -i <inputfile>
 
 # N. Wuerfel SPRING 2017
 
@@ -9,12 +12,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os, signal, sys, getopt, binstr
 
-helpMessage = 'usage: <cmdline> python noahFIND.py -i <inputfile> -e <eventNo> -b <bcidNo> \n -v for verbose'
+helpMessage = 'usage: <cmdline> python dispFIND.py -i <inputfile> -e <eventNo> -b <bcidNo> \n -v for verbose \n -l for live'
 verbose = False
 
 # get data for specific event number
-# our data is nicely arranged as events always take 10 lines
-# takes eventNum and lines read fromfile
 # TODO worry about efficiency of reads from file (linecache?)
 def getEvent(eventNo, dataLines):
 
@@ -46,6 +47,8 @@ def getEvent(eventNo, dataLines):
     event = parseEvent(eventLines)
     return event
     
+# given 10 lines corresponding to an event
+# returns an event object (a list)
 def parseEvent(eventLines):    
 
     assert(len(eventLines) == 10), 'event longer or shorter than 10 lines'
@@ -61,32 +64,27 @@ def parseEvent(eventLines):
             print "Processing line: %s" % line
 
         # handle event lines
-        # later this should save events or something so we can get them efficiently
-        # currently doesn't do that LOL
-        # TODO
         if lineInfo[0] == "Event":
             lineEventNum = int(lineInfo[1])
-            continue # TODO store events for the getEvent method
+            continue 
         # bcid lines
         elif lineInfo[1] == "BCID:":
             lineBCID = int(lineInfo[2])
             continue # TODO store BCID for getEvent
+        # data lines
         else:
             tmpLines.append([int (x) for x in lineInfo])
-            # each event comprised of 8 things
+            # each event comprised of 8 hits
             if len(tmpLines) == 8:
                 event = [lineEventNum] + [lineBCID] + tmpLines
-                if verbose:
-                    print "Event %i:" % lineEventNum
-                    print event
                 return event
 
 # "live" display of data, just looks at last event recorded in the file after some
 # time
 # TODO build a "pause" button
 def goLive(fileName):
+    numberDisplayed = 1
     while True:
-        # TODO change to clear whatever screen I end up using, this is for ascii
         unused = os.system('clear') # avoid printing return val
         revLines = list(reversed(open(fileName,'r').readlines()))
         lastEventLines = list(reversed(revLines[0:10]))
@@ -94,35 +92,134 @@ def goLive(fileName):
         if verbose:
             print lastEvent
             print "now sleeping..."
-        ascii_display([lastEvent])
+        display_hub([lastEvent])
+        print "This is the %ith display I've shown, isn't it time you go home?" % numberDisplayed
+        numberDisplayed = numberDisplayed + 1 
         unused = os.system('sleep 2')
 
-# stupid ascii display, takes a list of events
+# stupid display hub, takes a list of events
+def display_hub(eventList):
+
+    eventNos = []
+    desiredEvent = 0
+    displaying = 0
+    displayHistory = []
+
+    # only one event, display it
+    if len(eventList) == 1:
+        ascii_display_event(eventList[desiredEvent])
+
+    # else, give user ability to see whichever events are desired
+    else:
+        unused = os.system('clear')
+        print "Launching display utility..."
+        print "Parsing events..."
+        for event in eventList:
+            eventNos.append(event[0]) 
+        while True:
+            # TODO think about a better way of doing this?
+            print "Events in the range %i-%i are available for display." % (min(eventNos), max(eventNos))
+            print "Please type the event number you'd like to view, or 'quit' to exit."
+            print "Use 'help' to get a list of commands"
+            # get user input
+            userInput = raw_input()
+            print
+
+            try:
+                os.system('clear')
+                if userInput == 'quit' or userInput == 'q':
+                    print "Now quitting, have a nice day..."
+                    sys.exit()
+
+                elif userInput == 'help' or userInput == 'h':
+                    print "Commands:"
+                    print "'quit', 'q' - exits the program"
+                    print "'help', 'h' - displays this list"
+                    print "'clear' - clears terminal"
+                    print "'last' - shows last event displayed"
+                    print "'a' - decrease displayed event number by 1"
+                    print "'d', '' - increase displayed event number by 1"
+                    print "'hist' - show eventNo browsing history"
+                    print "'wipe' - clean browsing history"
+                    print 
+
+                elif userInput == 'clear':
+                    os.system('clear')
+
+                elif userInput == 'last':
+                    if not displayHistory:
+                        print "You have an empty browsing history!"
+                        continue
+                    else:
+                        lastEvent = displayHistory.pop()
+                    ascii_display_event(eventList[lastEvent])
+                    
+
+                elif userInput == 'a':
+                    if not displayHistory: 
+                        print "Not currently showing an event"
+                        continue
+                    desiredEvent = displayHistory[-1] - 1
+                    displayHistory.append(desiredEvent)
+                    ascii_display_event(eventList[desiredEvent])
+
+
+                elif userInput == 'd' or userInput == '':
+                    if not displayHistory:
+                        print "Not currently showing an event"
+                        continue
+                    desiredEvent = displayHistory[-1] + 1
+                    displayHistory.append(desiredEvent)
+                    ascii_display_event(eventList[desiredEvent])
+
+
+                elif userInput == 'hist':                
+                    print "Event browsing history:"
+                    for item in displayHistory:
+                        print item+1
+
+                elif userInput == 'wipe':
+                    displayHistory = []
+                    print "History cleaned"
+
+                elif 'overlay' in userInput:
+                    # TODO
+                    print "not yet supported"
+
+                elif int(userInput) in range(min(eventNos),max(eventNos)+1): 
+                    desiredEvent = int(userInput)-1
+                    displayHistory.append(desiredEvent)
+                    ascii_display_event(eventList[desiredEvent])
+
+                else:
+                    print "Please supply an event number within the valid range"
+    
+            # only want to support numbers or 'quit'
+            except ValueError:
+                print "Please supply an event number or the 'quit' command"
+
+
+# displays a single event
 # events formatted as [eventNo, BCID, [vmm, channel], [vmm, channel], ...]
-def ascii_display(eventList):
-    for event in eventList:
-        if verbose:
-            print event
-        
-        eventNo = event[0]
-        eventBCID = event[1]
+def ascii_display_event(event):
 
-        print "Event Number: %i, Event BCID: %i" % (eventNo, eventBCID)
+    eventNo = event[0]
+    eventBCID = event[1]
+    print "Event Number: %i, Event BCID: %i" % (eventNo, eventBCID)
 
-        # current order is XXXXUUVV or something crazy
-        eventBoards = event[2:]
-
-        for board in eventBoards:
-            vmmID = board[0]
-            channel = board[1]
-            hitMark = ["."]*8  
-            hitMark[vmmID] = "%i" % channel
-            print "".join(hitMark)
+    # TODO check geography and remap to look like octoplet if needed
+    # current board order is XXXXUUVV or something crazy
+    eventBoards = event[2:]
+    for board in eventBoards:
+        vmmID = board[0]
+        channel = board[1]
+        hitMark = ["."]*8  
+        hitMark[vmmID] = "%i" % channel
+        print '{:^80}'.format(''.join(hitMark))
         
 
-# open gui(?) to display events
-# need to give input file
 def main(argv):
+
     targetEventNum = 0
     inputfile = ''
     tmpLines = []
@@ -137,6 +234,7 @@ def main(argv):
         print helpMessage
         sys.exit(2)
 
+    # deal with flags
     for opt, arg in opts:
         if opt == '-h':
             print helpMessage
@@ -151,8 +249,9 @@ def main(argv):
         elif opt in ("-e", "--eventNo"):
             targetEventNum = int(arg)
  
-    if inputfile == '':
-        print 'please supply an inputfile, -h for help'
+    # check input file
+    if not os.path.isfile(inputfile):
+        print 'Please supply an input file, -h for help'
         sys.exit()
 
     # go live
@@ -162,10 +261,11 @@ def main(argv):
         goLive(inputfile)
         sys.exit()
 
+    # open file
     dataFile = open(inputfile, 'r')
     dataLines = dataFile.readlines()
 
-    # if we have a particular event that's the only one we'll grab
+    # if we have a particular event, get it
     if targetEventNum != 0:
         events.append(getEvent(targetEventNum, dataLines))
 
@@ -177,6 +277,7 @@ def main(argv):
         i = 1
         while True:                
             thisEvent = getEvent(i,dataLines)
+            i = i+1
             if not thisEvent:
                 break
             events.append(thisEvent)
@@ -184,7 +285,9 @@ def main(argv):
     if verbose:
         print events
 
-    ascii_display(events)
+    # show event(s)
+    # TODO make it easy to display many different events from file
+    display_hub(events)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
