@@ -17,18 +17,22 @@ def main(argv):
     inputfile = ''
     outputfile = ''
     try:
-        opts, args = getopt.getopt(argv, "hi:o:r", ["ifile=", "ofile="])
+        opts, args = getopt.getopt(argv, "hi:o:r:w:", ["ifile=", "ofile="])
     except getopt.GetoptError:
-        print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> [-r]'
+        print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> -w <windowlength> [-r]'
+        print 'window length should be the BCID window for each GBT packet event'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> [-r]'
+            print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> -w <windowlength> [-r]'
+            print 'window length should be the BCID window for each GBT packet event'
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
         elif opt in ("-o", "--ofile"):
             outputfile = arg
+        elif opt in ("-w"):
+            win = 2*int(arg)
         elif opt in ("-r"):
             remapflag = 1
 
@@ -37,15 +41,23 @@ def main(argv):
 
     outputData = collections.OrderedDict()
 
-    eventnum = 0
+    nevent = 1
     n = 5 #starting pt of data
+    nlines = -1
     lines = []
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
-    #remapping = range(32)
+
     for line in datafile:
         if str(line[0:4]) =='TIME':
-            decodedfile.write('\n'+line)
+            timestamp = int(float(line[6:-1]))
+            timestampsec = timestamp/pow(10,9)
+            timestampns = timestamp%pow(10,9)
             continue
+        if (nlines == -1 or nlines % (win*4) == 0):
+            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n\n")
+            nevent = nevent + 1
+            nlines = 0
+        nlines = nlines + 1
         lines.append(line[:len(line)-1])
         if len(lines) == 4:
             strobe = ''.join(map(str,lines))
@@ -74,20 +86,16 @@ def main(argv):
                         boardlist.append((31-i)/8)
                         vmmlist.append((31-i)%8)
 
-            decodedfile.write( "BCID: {0: >10}  Hitmap: {1: >20}  Boards: ".format(int(bcid,16), hitmap ) )
+            decodedfile.write( "BCID: {0} Hits: {1}".format(int(bcid,16),len(vmmlist)) + '\n')
             reversedBoardList = reversed(boardlist)
             reversedBoardStringList = [str(x) for x in reversedBoardList]
-            decodedfile.write( '{0: >30}'.format( " ".join( reversedBoardStringList ) if len(reversedBoardStringList) else "N/A" ) )
-
-            decodedfile.write('  VMMs:')
             reversedVMMList = reversed(vmmlist)
             reversedVMMStringList = [str(x) for x in reversedVMMList]
-            decodedfile.write( '{0: >30}'.format( " ".join( reversedVMMStringList ) if len(reversedVMMStringList) else "N/A" ) )
-
             reversedVMMData = reversed(vmmdata)
             reversedVMMStringData = [str(x) for x in reversedVMMData]
-            decodedfile.write( '  CH: {0: >30}\n'.format( " ".join( reversedVMMStringData[:len(vmmlist)] ) if len(vmmlist) else "N/A" ) )
-            ### here the list is truncated.. make sure that's what I'm supposed to do...
+            for ind, elem in enumerate(reversedBoardStringList):
+                decodedfile.write(elem + " " + reversedVMMStringList[ind] + " " + reversedVMMStringData[ind]+'\n')
+            decodedfile.write("\n")
 
             tmpKey = str(int(bcid,16))
             if tmpKey in outputData:
