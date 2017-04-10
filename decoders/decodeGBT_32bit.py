@@ -5,12 +5,12 @@
 # data: 12 bits of BCID + 8 bits of ERR_FLAGS + 32 bits of HITLIST + 8 bits of art data parity + 8 * 6 bits of art data
 # constant C,E written out somewhere
 
-# A.Wang, last edited Nov 2, 2016
+# A.Wang, last edited April 10, 2017
 
 
 import sys, getopt,binstr
 import json
-import collections
+import collections, visual
 
 def main(argv):
     remapflag = 0
@@ -36,6 +36,8 @@ def main(argv):
         elif opt in ("-r"):
             remapflag = 1
 
+    colors = visual.bcolors()
+    num_lines = sum(1 for line in open(inputfile))
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
 
@@ -46,7 +48,9 @@ def main(argv):
     nlines = -1
     lines = []
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
-
+    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
+    print colors.ANNFAV + "\tDecoding!\t" + "(>'-')> <('-'<) ^(' - ')^ <('-'<) (>'-')>\t "+ colors.ENDC
+    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
     for line in datafile:
         if str(line[0:4]) =='TIME':
             timestamp = int(float(line[6:-1]))
@@ -57,6 +61,8 @@ def main(argv):
             decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n\n")
             nevent = nevent + 1
             nlines = 0
+            if (nevent % (num_lines/(10*win*4)) == 0):
+                visual.update_progress(float(nevent)/num_lines*win*4.)
         nlines = nlines + 1
         lines.append(line[:len(line)-1])
         if len(lines) == 4:
@@ -96,6 +102,7 @@ def main(argv):
             for ind, elem in enumerate(reversedBoardStringList):
                 decodedfile.write(elem + " " + reversedVMMStringList[ind] + " " + reversedVMMStringData[ind]+'\n')
                 if (ind == 7):
+                    print colors.WARNING + "Hit map has more hits than room for channels! Stopping early!" + colors.ENDC
                     break
             decodedfile.write("\n")
 
@@ -110,7 +117,10 @@ def main(argv):
 
     decodedfile.close()
     datafile.close()
-    print "done decoding, exiting \n"
+    print "\n"
+    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
+    print colors.ANNFAV + "\tDone decoding, exiting! \t\t\t\t\t "+ colors.ENDC
+    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
     
 
 if __name__ == "__main__":

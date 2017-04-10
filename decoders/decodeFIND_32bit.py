@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Decoded output form for HIT packets out of the GBT decoder
+# Decoded output form for FIND packets out of the trigger processor
 # header
 # strip data
 # slope data 
@@ -23,7 +23,7 @@
 # A.Wang, last edited Nov 21, 2016
 
 
-import sys, getopt,binstr
+import sys, getopt,binstr,visual
 
 def decode(offsetflag, remapflag, octgeo, overall_offset, offsets, remapping, hit, ip, id):
     strip = 0
@@ -74,6 +74,8 @@ def main(argv):
         elif opt == '-f':
             offsetflag = 1
 
+    colors = visual.bcolors()
+    num_lines = sum(1 for line in open(inputfile))
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
 
@@ -92,17 +94,21 @@ def main(argv):
     nevent = 0
     for line in datafile:
         if str(line[0:4]) =='TIME':
-#            nevent = nevent + 1
             timestamp = int(float(line[6:-1]))
             timestampsec = timestamp/pow(10,9)
             timestampns = timestamp%pow(10,9)
-#            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
             continue
+        if ((len(lines) == 0) and (line[0:2] != "A2")):
+            print "\n"
+            print colors.WARNING + "We can't find the header and we expect it!" + colors.ENDC
+            print "\n"
+            sys.exit()
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9
             nevent = nevent + 1
+            if (nevent % (num_lines/(10*9)) == 0):
+                visual.update_progress(float(nevent)/num_lines*9.)
             decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
-            print lines
             header = lines[0] #contains constants + BCID
             bcid = header[4:]
             for i in range(4):
@@ -126,7 +132,10 @@ def main(argv):
             chs = []
     decodedfile.close()
     datafile.close()
-    print "done decoding, exiting \n"
+    print "\n"
+    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
+    print colors.ANNFAV + "\tDone decoding, exiting! \t\t\t\t\t "+ colors.ENDC
+    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
     
 
 if __name__ == "__main__":
