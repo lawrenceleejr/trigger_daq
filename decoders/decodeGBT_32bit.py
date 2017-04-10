@@ -43,10 +43,11 @@ def main(argv):
 
     outputData = collections.OrderedDict()
 
-    nevent = 1
+    nevent = 0
     n = 5 #starting pt of data
     nlines = -1
     lines = []
+    nwarning = 0
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
     print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
     print colors.ANNFAV + "\tDecoding!\t" + "(>'-')> <('-'<) ^(' - ')^ <('-'<) (>'-')>\t "+ colors.ENDC
@@ -102,7 +103,12 @@ def main(argv):
             for ind, elem in enumerate(reversedBoardStringList):
                 decodedfile.write(elem + " " + reversedVMMStringList[ind] + " " + reversedVMMStringData[ind]+'\n')
                 if (ind == 7):
-                    print colors.WARNING + "Hit map has more hits than room for channels! Stopping early!" + colors.ENDC
+                    nwarning = nwarning + 1
+                    if nwarning == 30:
+                        print colors.FAIL + "Warning reached maximum of 30 events, suppressing warnings" + colors.ENDC
+                    if (nwarning < 30):
+                        print hitmap
+                        print colors.WARNING + "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!" + colors.ENDC
                     break
             decodedfile.write("\n")
 

@@ -25,7 +25,7 @@
 # A.Wang, last edited Nov 21, 2016
 
 
-import sys, getopt,binstr
+import sys, getopt, binstr, visual
 
 def decode(offsetflag, remapflag, octgeo, overall_offset, offsets, remapping, hit, ip, id):
     strip = 0
@@ -106,6 +106,7 @@ def main(argv):
             sys.exit()
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9
+            nevent = nevent + 1
             if (nevent % (num_lines/(10*9)) == 0):
                 visual.update_progress(float(nevent)/num_lines*9.)
             decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
