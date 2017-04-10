@@ -95,6 +95,8 @@ def main(argv):
             reversedVMMStringData = [str(x) for x in reversedVMMData]
             for ind, elem in enumerate(reversedBoardStringList):
                 decodedfile.write(elem + " " + reversedVMMStringList[ind] + " " + reversedVMMStringData[ind]+'\n')
+                if (ind == 7):
+                    break
             decodedfile.write("\n")
 
             tmpKey = str(int(bcid,16))
