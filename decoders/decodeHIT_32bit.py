@@ -95,6 +95,9 @@ def main(argv):
         if str(line[0:4]) =='TIME':
             decodedfile.write('\n'+line)
             continue
+        if ((len(lines) == 0) and (line[0:2] != "A1")):
+            print "WTF is going on!"
+            break
         lines.append(line[:len(line)-1])
         if len(lines) == 9: # groups of 9
             print lines
