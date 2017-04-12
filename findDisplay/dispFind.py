@@ -8,11 +8,9 @@
 
 # N. Wuerfel SPRING 2017
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import os, signal, sys, getopt, binstr
+import os, signal, sys, getopt, binstr, random
 
-helpMessage = 'usage: <cmdline> python dispFIND.py -i <inputfile> -e <eventNo> -b <bcidNo> \n -v for verbose \n -l for live'
+helpMessage = 'usage: <cmdline> python dispFIND.py -i <inputfile> -e <eventNo> \n -v for verbose \n -l for live'
 
 # option flags for decoding 
 verbose = False
@@ -37,7 +35,21 @@ octBoardMap = [4, 5, 0, 2, 1, 3, 6, 7]
 # flipping the channel number, so this is only for the display 
 flippedBoards = [5, 0, 1, 7]
 
-
+# teh love
+compliments = ['Teehee...',\
+               'Oh my, you\'re too kind!',\
+               '*Blushes*',\
+               'Honestly, you can\'t spend all day complimenting me...',\
+               'What kind of program do you think I am?!',\
+               'Right back atcha, hotshot!',\
+               'Is this appropriate workplace behaviour?',\
+               'Oh stop...',\
+               'Traceback (most recent call last):\
+               \n  File "dispFind.py", line 412, in <module>\
+               \n    main (sys.argv[1:])\n\n\n\
+               Haha, I\'m just fucking with you,\
+               that was sweet though, thanks!',\
+               'You know how to treat a display script right xoxo ;)']
 
 # get data for specific event number
 # TODO worry about efficiency of reads from file (linecache?)
@@ -112,7 +124,8 @@ def parseRawEvent(rawEventLines):
     event = [1337]
 
     for line in rawEventLines:
-        if str(line[0:4]) == 'TIME':
+        if str(line[0:4]) != 'TIME':
+            print 'PANICKING: WHERE IS THE TIME MARKER?!?!?!'
             # TODO if time info is important?
             continue
         lines.append(line[:len(line)-1]) 
@@ -186,9 +199,9 @@ def goLive(fileName):
 def display_hub(eventList):
 
     eventNos = []
-    desiredEvent = 0
-    displaying = 0
     displayHistory = []
+    desiredEvent = 0
+    complimentNo = 0
 
     # only one event, display it
     if len(eventList) == 1:
@@ -201,15 +214,19 @@ def display_hub(eventList):
         print "Parsing events..."
         for event in eventList:
             eventNos.append(event[0]) 
+
+        minEvent = min(eventNos)
+        maxEvent = max(eventNos)
+
         while True:
             # TODO think about a better way of doing this?
-            print "Events in the range %i-%i are available for display." % (min(eventNos), max(eventNos))
-            print "Please type the event number you'd like to view, or 'quit' to exit."
+            print "Events in the range %i-%i are available for display."\
+                     % (minEvent, maxEvent)
+            print "Please type the event number to view, or 'quit' to exit."
             print "Use 'help' to get a list of commands"
+
             # get user input
             userInput = raw_input()
-            print
-
             try:
                 os.system('clear')
                 if userInput == 'quit' or userInput == 'q':
@@ -226,6 +243,7 @@ def display_hub(eventList):
                     print "'d', '' - increase displayed event number by 1"
                     print "'hist' - show eventNo browsing history"
                     print "'wipe' - clean browsing history"
+                    print "'compliment' - feel the love"
                     print 
 
                 elif userInput == 'clear':
@@ -238,7 +256,6 @@ def display_hub(eventList):
                     else:
                         lastEvent = displayHistory.pop()
                     ascii_display_event(eventList[lastEvent])
-                    
 
                 elif userInput == 'a':
                     if not displayHistory: 
@@ -248,7 +265,6 @@ def display_hub(eventList):
                     displayHistory.append(desiredEvent)
                     ascii_display_event(eventList[desiredEvent])
 
-
                 elif userInput == 'd' or userInput == '':
                     if not displayHistory:
                         print "Not currently showing an event"
@@ -256,7 +272,6 @@ def display_hub(eventList):
                     desiredEvent = displayHistory[-1] + 1
                     displayHistory.append(desiredEvent)
                     ascii_display_event(eventList[desiredEvent])
-
 
                 elif userInput == 'hist':                
                     print "Event browsing history:"
@@ -266,6 +281,15 @@ def display_hub(eventList):
                 elif userInput == 'wipe':
                     displayHistory = []
                     print "History cleaned"
+
+                elif userInput == 'compliment':
+                    complimentNo = complimentNo + 1
+                    if complimentNo == 4:
+                        print "You're so persistent, here's my number:"
+                        print "1-800- %i EVENTS TO DISPLAY" % maxEvent
+                    else:
+                        rand = random.randint(0,9)
+                        print compliments[rand]
 
                 elif 'overlay' in userInput:
                     # TODO
@@ -279,9 +303,8 @@ def display_hub(eventList):
                 else:
                     print "Please supply an event number within the valid range"
     
-            # only want to support numbers or 'quit'
             except ValueError:
-                print "Please supply an event number or the 'quit' command"
+                print "Please supply an event number or a valid command."
 
 
 # displays a single event
@@ -305,7 +328,8 @@ def ascii_display_event(event):
             hitMark[8-vmmID-1] = "%2i " % channel
         else:
             hitMark[vmmID] = "%2i " % channel
-        print '{:^20}'.format(''.join(octBoardOrder[i]))+'{:^20}'.format(''.join(hitMark))
+        print '{:^20}'.format(''.join(octBoardOrder[i]))\
+                    +'{:^20}'.format(''.join(hitMark))
         i = i + 1
         
 
@@ -320,7 +344,7 @@ def main(argv):
     # get options
     # TODO migrate to argparse?
     try: 
-        opts, args = getopt.getopt(argv, "hvli:e:b:",["ifile=","eventNo=","targetBCID="])
+        opts, args = getopt.getopt(argv, "hvli:e:",["ifile=","eventNo="])
     except getopt.GetoptError:
         print helpMessage
         sys.exit(2)
@@ -340,6 +364,24 @@ def main(argv):
         elif opt in ("-e", "--eventNo"):
             targetEventNum = int(arg)
  
+    # check for mutually exclusive flags (live and eventNo)
+    # resolved by user
+    if targetEventNum != 0 and live:
+        while True:
+            os.system('clear')
+            print "Hello, sorry to bother you, but I noticed that you've indicated both live display and a specific event number. Unfortunately, event numbers are meaningless for live display."
+            print "Please, choose 'l' for live or 'e' for event now..."
+            testArg = raw_input()
+            if testArg == 'l':
+                targetEventNum = 0
+                break
+            elif testArg == 'e':
+                live = False
+                break
+            else: 
+                print 'Please don\'t be cheeky with me, %s is invalid and you know it...' % testArg
+                os.system('sleep 2')
+
     # check input file
     if not os.path.isfile(inputfile):
         print 'Please supply an input file, -h for help'
