@@ -14,7 +14,7 @@ import os, signal, sys, getopt, binstr
 
 helpMessage = 'usage: <cmdline> python dispFIND.py -i <inputfile> -e <eventNo> -b <bcidNo> \n -v for verbose \n -l for live'
 
-#option flags for decoding 
+# option flags for decoding 
 verbose = False
 remapFlag = 0
 offsetFlag = 0
@@ -24,7 +24,19 @@ octGeo = 1
 remapping = [11,10,9,8,15,14,13,12,3,2,1,0,7,6,5,4,27,26,25,24,31,30,29,28,19,18,17,16,23,22,21,20]
 offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])    
 overall_offset = "C00"
-octBoardMap = [4, 5, 0, 2, 1, 3, 6, 7]
+
+# FIND formatted as V1 V0 U1 U0 X3 X2 X1 X0
+# Need formatted as X3 X2 V1 U1 V0 U0 X1 X0
+# octBoardMap takes care of this reordering for us
+octBoardMap = [4, 5, 0, 2, 1, 3, 6, 7] 
+
+# VMMs on some boards is flipped S.T. channel 64 is where we'd expect 0
+# currently, flipped boards are: X2, V1, V0, X0
+# flipbedBoards takes care of reordering the presentation in display
+# HOWEVER, Ann's decode that I use for raw events already takes care of 
+# flipping the channel number, so this is only for the display 
+flippedBoards = [5, 0, 1, 7]
+
 
 
 # get data for specific event number
@@ -276,21 +288,25 @@ def display_hub(eventList):
 # events formatted as [eventNo, BCID, [vmm, channel], [vmm, channel], ...]
 def ascii_display_event(event):
 
+    i = 0
+    octBoardOrder = ['X3', 'X2', 'V1', 'U1', 'V0', 'U0', 'X1', 'X0']
+
     eventNo = event[0]
     eventBCID = event[1]
+    eventBoards = event[2:]
     print "Event Number: %i, Event BCID: %i" % (eventNo, eventBCID)
 
-    # FIND formatted as V1 V0 U1 U0 X3 X2 X1 X0
-    # Need to reorder back to X3 X2 V1 U1 V0 U0 X1 X0
-    # octBoardMap takes care of this reordering for us
-    eventBoards = event[2:]
     for index in octBoardMap:
         board = eventBoards[index]
         vmmID = board[0]
         channel = board[1]
         hitMark = [".. "]*8  
-        hitMark[vmmID] = "%2i " % channel
-        print '{:^80}'.format(''.join(hitMark))
+        if index in flippedBoards:
+            hitMark[8-vmmID-1] = "%2i " % channel
+        else:
+            hitMark[vmmID] = "%2i " % channel
+        print '{:^20}'.format(''.join(octBoardOrder[i]))+'{:^20}'.format(''.join(hitMark))
+        i = i + 1
         
 
 def main(argv):
