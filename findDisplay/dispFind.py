@@ -24,6 +24,7 @@ octGeo = 1
 remapping = [11,10,9,8,15,14,13,12,3,2,1,0,7,6,5,4,27,26,25,24,31,30,29,28,19,18,17,16,23,22,21,20]
 offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])    
 overall_offset = "C00"
+octBoardMap = [4, 5, 0, 2, 1, 3, 6, 7]
 
 
 # get data for specific event number
@@ -104,6 +105,9 @@ def parseRawEvent(rawEventLines):
             continue
         lines.append(line[:len(line)-1]) 
         if len(lines) == 9:
+
+            # TODO error checking for raw Data file
+
             header = lines[0]
             bcid = int(header[4:])
             event.append(bcid)
@@ -276,14 +280,16 @@ def ascii_display_event(event):
     eventBCID = event[1]
     print "Event Number: %i, Event BCID: %i" % (eventNo, eventBCID)
 
-    # TODO check geography and remap to look like octoplet if needed
-    # current board order is XXXXUUVV or something crazy
+    # FIND formatted as V1 V0 U1 U0 X3 X2 X1 X0
+    # Need to reorder back to X3 X2 V1 U1 V0 U0 X1 X0
+    # octBoardMap takes care of this reordering for us
     eventBoards = event[2:]
-    for board in eventBoards:
+    for index in octBoardMap:
+        board = eventBoards[index]
         vmmID = board[0]
         channel = board[1]
-        hitMark = ["."]*8  
-        hitMark[vmmID] = "%i" % channel
+        hitMark = [".. "]*8  
+        hitMark[vmmID] = "%2i " % channel
         print '{:^80}'.format(''.join(hitMark))
         
 
