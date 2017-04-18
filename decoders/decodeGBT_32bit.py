@@ -44,6 +44,10 @@ def main(argv):
     outputData = collections.OrderedDict()
 
     nevent = 0
+    addc1 = -1
+    addc2 = -1
+    Aflag = True
+    
     n = 5 #starting pt of data
     nlines = -1
     lines = []
@@ -58,13 +62,13 @@ def main(argv):
             timestampsec = timestamp/pow(10,9)
             timestampns = timestamp%pow(10,9)
             continue
-        if (nlines == -1 or nlines % (win*4) == 0):
-            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n\n")
-            nevent = nevent + 1
-            nlines = 0
-            if (nevent % (num_lines/(10*win*4)) == 0):
-                visual.update_progress(float(nevent)/num_lines*win*4.)
-        nlines = nlines + 1
+        # if (nlines == -1 or nlines % (win*4) == 0):
+        #     decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n\n")
+        #     nevent = nevent + 1
+        #     nlines = 0
+        #     if (nevent % (num_lines/(10*win*4)) == 0):
+        #         visual.update_progress(float(nevent)/num_lines*win*4.)
+#        nlines = nlines + 1
         lines.append(line[:len(line)-1])
         if len(lines) == 4:
             strobe = ''.join(map(str,lines))
@@ -92,7 +96,19 @@ def main(argv):
                     if (hitmap[i] is "1"):
                         boardlist.append((31-i)/8)
                         vmmlist.append((31-i)%8)
-
+            if (abs(addc1-int(bcid,16)) != 1 and abs(addc1-int(bcid,16)) != 4096) and Aflag:
+                decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n\n")
+                nlines = 0
+                if (nevent % (num_lines/(10*win*4)) == 0):
+                    visual.update_progress(float(nevent)/num_lines*win*4.)
+                nevent = nevent + 1
+                Aflag = True
+            if (Aflag):
+                addc1 = int(bcid,16)
+                Aflag = False
+            else:
+                addc2 = int(bcid,16)
+                Aflag = True
             decodedfile.write( "BCID: {0} Hits: {1}".format(int(bcid,16),len(vmmlist)) + '\n')
             reversedBoardList = reversed(boardlist)
             reversedBoardStringList = [str(x) for x in reversedBoardList]
