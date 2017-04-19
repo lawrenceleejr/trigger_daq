@@ -23,20 +23,18 @@
 # A.Wang, last edited Nov 21, 2016
 
 
-import sys, getopt,binstr,visual
+import sys, getopt,binstr,visual,commonTrig
 
-def decode(offsetflag, remapflag, octgeo, overall_offset, offsets, remapping, hit, ip, id):
+def decode(offsetflag, remapflag, octgeo, overall_offset, offsets, remapping, hit, ip, id, flippedboards):
     strip = 0
     if offsetflag == 1:
-        print "Added offset!"
         if (int(hit[id*4:id*4+4],16) != 0) and sum([int(x,16) for x in offsets])!= 0:
             strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[ip],16)
     else:
         strip = int(hit[id*4:id*4+4],16)
     if strip is not 0:
-#        if ((ip == 2) or (ip == 3) or (ip == 4) or (ip == 6)) and (octgeo == 1):
-        # FTS
-        if ((ip == 0) or (ip == 1) or (ip == 5) or (ip == 7)) and (octgeo == 1):
+        if ip in flippedboards and octgeo == 1:
+#        if ((ip == 0) or (ip == 1) or (ip == 5) or (ip == 7)) and (octgeo == 1):
             strip = 512-strip-1
         if remapflag == 1:
             ivmm = remapping[strip/64]%8
@@ -75,7 +73,14 @@ def main(argv):
         elif opt == '-f':
             offsetflag = 1
 
+    if (offsetflag):
+        print "Adding offsets!"
+    else:
+        print "No offsets!"
+            
     colors = visual.bcolors()
+    consts = commonTrig.tconsts()
+    
     num_lines = sum(1 for line in open(inputfile))
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
@@ -90,10 +95,6 @@ def main(argv):
     chs = [] #channel number
 
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
-    offsets = ["3A","3A","47","47","40","40","40","40"]
-#    offsets = ["40","40","47","3A","47","3A","40","40"][::-1]
-#    offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])
-    overall_offset = "000"
     nevent = 0
     for line in datafile:
         if str(line[0:4]) =='TIME':
@@ -119,7 +120,7 @@ def main(argv):
             iplane = 0
             for hit in hits:
                 for j in range(2):
-                    ivmm, ich = decode(offsetflag, remapflag, octgeo, overall_offset, offsets, remapping, hit, iplane,j)
+                    ivmm, ich = decode(offsetflag, remapflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, remapping, hit, iplane,j, consts.FLIPPEDBOARDS)
                     vmms.append(ivmm)
                     chs.append(ich)
                     iplane = iplane + 1

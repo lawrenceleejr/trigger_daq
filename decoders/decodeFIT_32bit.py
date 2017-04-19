@@ -21,12 +21,11 @@
 # A.Wang, last edited Nov 21, 2016
 
 
-import sys, getopt,binstr, time, visual
+import sys, getopt,binstr, time, visual, commonTrig
 
-def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id):
+def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id, flippedboards):
     strip = 0
     if offsetflag == 1:
-        print "Added offset!"
         if (int(hit[id*4:id*4+4],16) != 0):
             strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[ip],16)
     else:
@@ -34,7 +33,8 @@ def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id):
     if strip is not 0:
 #        if ((ip == 2) or (ip == 3) or (ip == 4) or (ip == 6)) and (octgeo == 1):
         # FTS
-        if ((ip == 0) or (ip == 1) or (ip == 5) or (ip == 7)) and (octgeo == 1):
+        if ip in flippedboards and (octgeo == 1):
+#        if ((ip == 0) or (ip == 1) or (ip == 5) or (ip == 7)) and (octgeo == 1):
             strip = 512-strip-1
         ivmm = (strip/64)%8
         ich = strip%64+1
@@ -67,7 +67,13 @@ def main(argv):
         elif opt == '-f':
             offsetflag = 1
 
+    if (offsetflag):
+        print "Adding offsets!"
+    else:
+        print "No offsets!"
+    
     colors = visual.bcolors()
+    consts = commonTrig.tconsts()
     num_lines = sum(1 for line in open(inputfile))
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
@@ -114,7 +120,7 @@ def main(argv):
             iplane = 0
             for hit in hits:
                 for j in range(2):
-                    ivmm, ich = decode(offsetflag, octgeo, overall_offset, offsets, hit, iplane,j)
+                    ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, hit, iplane,j, consts.FLIPPEDBOARDS)
                     vmms.append(ivmm)
                     chs.append(ich)
                     iplane = iplane + 1
