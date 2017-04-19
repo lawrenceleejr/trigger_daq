@@ -8,7 +8,7 @@
 
 # N. Wuerfel SPRING 2017
 
-import os, signal, sys, getopt, binstr, random
+import time, os, signal, sys, getopt, binstr, random
 
 helpMessage = 'usage: <cmdline> python dispFIND.py -i <inputfile> -e <eventNo> \n -v for verbose \n -l for live'
 
@@ -186,17 +186,22 @@ def goLive(fileName):
     print fileName
     numberDisplayed = 1
     while True:
-        unused = os.system('clear') # avoid printing return val
-        revLines = list(reversed(open(fileName,'r').readlines()))
-        lastEventLines = list(reversed(revLines[0:9]))
-        lastEvent = parseRawEvent(lastEventLines)
-        if verbose:
-            print lastEvent
-            print "now sleeping..."
-        display_hub([lastEvent])
-        print "This is the %ith display I've shown, isn't it time you go home?" % numberDisplayed
-        numberDisplayed = numberDisplayed + 1 
-        unused = os.system('sleep 2')
+        try:
+            unused = os.system('clear') # avoid printing return val
+            revLines = list(reversed(open(fileName,'r').readlines()))
+            lastEventLines = list(reversed(revLines[0:9]))
+            lastEvent = parseRawEvent(lastEventLines)
+            if verbose:
+                print lastEvent
+                print "now sleeping..."
+            display_hub([lastEvent])
+            print "This is the %ith display I've shown, isn't it time you go home?" % numberDisplayed
+            numberDisplayed = numberDisplayed + 1 
+            time.sleep(2)
+        except KeyboardInterrupt:
+            unused = os.system('clear') 
+            print "Exiting, have a nice day..."
+            sys.exit()
 
 # stupid display hub, takes a list of events
 def display_hub(eventList):
