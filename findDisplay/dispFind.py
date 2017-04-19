@@ -53,7 +53,6 @@ compliments = ['Teehee...',\
                'You know how to treat a display script right xoxo ;)']
 
 # get data for specific event number
-# TODO worry about efficiency of reads from file (linecache?)
 def getEvent(eventNo, dataLines):
 
     lineNum = (eventNo-1) * 10
@@ -107,7 +106,7 @@ def parseEvent(eventLines):
         # bcid lines
         elif lineInfo[1] == "BCID:":
             lineBCID = int(lineInfo[2])
-            continue # TODO store BCID for getEvent
+            continue
         # data lines
         else:
             tmpLines.append([int (x) for x in lineInfo])
@@ -127,7 +126,6 @@ def parseRawEvent(rawEventLines):
     for line in rawEventLines:
         if str(line[0:4]) == 'TIME' and rawEventLines.index(line) == 0:
             print 'PANICKING: WHERE IS THE TIME MARKER?!?!?!'
-            # TODO if time info is important?
             continue
         lines.append(line[:len(line)-1]) 
         if len(lines) == 9:
@@ -181,7 +179,6 @@ def rawDecode(hit, ip, id):
 # "live" display of data, just looks at last event recorded in the file after some
 # time
 # the live display takes raw data from FIFO 23 and decodes it 
-# TODO build a "pause" button
 def goLive(fileName):
     print fileName
     numberDisplayed = 1
@@ -195,7 +192,8 @@ def goLive(fileName):
                 print lastEvent
                 print "now sleeping..."
             display_hub([lastEvent])
-            print "This is the %ith display I've shown, isn't it time you go home?" % numberDisplayed
+            print "This is the %ith display I've shown, \
+                isn't it time you go home?" % numberDisplayed
             numberDisplayed = numberDisplayed + 1 
             time.sleep(2)
         except KeyboardInterrupt:
@@ -227,7 +225,6 @@ def display_hub(eventList):
         maxEvent = max(eventNos)
 
         while True:
-            # TODO think about a better way of doing this?
             print "Events in the range %i-%i are available for display."\
                      % (minEvent, maxEvent)
             print "Please type the event number to view, or 'quit' to exit."
@@ -415,9 +412,6 @@ def main(argv):
         events.append(getEvent(targetEventNum, dataLines))
 
     # otherwise, just get all the events
-    # TODO this is stupid slow because I need to ask questions about python 
-    # getEvent either opens and reads all lines again or creates a copy of all
-    # the lines on each call which is very bad, linecache?
     else:
         i = 1
         while True:                
@@ -431,7 +425,6 @@ def main(argv):
         print events
 
     # show event(s)
-    # TODO make it easy to display many different events from file
     display_hub(events)
 
 if __name__ == "__main__":
