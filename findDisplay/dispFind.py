@@ -192,8 +192,7 @@ def goLive(fileName):
                 print lastEvent
                 print "now sleeping..."
             display_hub([lastEvent])
-            print "This is the %ith display I've shown, \
-                isn't it time you go home?" % numberDisplayed
+            print "This is the %ith display I've shown, isn't it time you go home?" % numberDisplayed
             numberDisplayed = numberDisplayed + 1 
             time.sleep(2)
         except KeyboardInterrupt:
@@ -319,7 +318,6 @@ def ascii_display_event(event):
     i = 0
     octBoardOrder = ['X3', 'X2', 'V1', 'U1', 'V0', 'U0', 'X1', 'X0']
 
-    print event
     eventNo = event[0]
     eventBCID = event[1]
     eventBoards = event[2:]
