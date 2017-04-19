@@ -27,7 +27,8 @@ def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id):
     strip = 0
     if offsetflag == 1:
         print "Added offset!"
-        strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[ip],16)
+        if (int(hit[id*4:id*4+4],16) != 0):
+            strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[ip],16)
     else:
         strip = int(hit[id*4:id*4+4],16)
     if strip is not 0:
@@ -51,7 +52,7 @@ def main(argv):
     inputfile = ''
     outputfile = ''
     try:
-        opts, args = getopt.getopt(argv, "hi:o:r:f:oct", ["ifile=", "ofile="])
+        opts, args = getopt.getopt(argv, "hi:o:rf", ["ifile=", "ofile="])
     except getopt.GetoptError:
         print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> [-f]'
         sys.exit(2)
@@ -80,8 +81,8 @@ def main(argv):
     vmms = [] #vmm number after remapping
     chs = [] #channel number
 
-    offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])
-    overall_offset = "C00"
+    offsets = ["3A","3A","47","47","40","40","40","40"]
+    overall_offset = "000"
     nevent = 0
     print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
     print colors.ANNFAV + "\tDecoding!\t" + "(>'-')> <('-'<) ^(' - ')^ <('-'<) (>'-')>\t "+ colors.ENDC

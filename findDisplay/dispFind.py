@@ -15,13 +15,14 @@ helpMessage = 'usage: <cmdline> python dispFIND.py -i <inputfile> -e <eventNo> \
 # option flags for decoding 
 verbose = False
 remapFlag = 0
-offsetFlag = 0
+offsetFlag = 1
 octGeo = 1
 
 # fixed vals for decoding 
 remapping = [11,10,9,8,15,14,13,12,3,2,1,0,7,6,5,4,27,26,25,24,31,30,29,28,19,18,17,16,23,22,21,20]
-offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])    
-overall_offset = "C00"
+offsets = ["3A","3A","47","47","40","40","40","40"]
+#offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])    
+overall_offset = "000"
 
 # FIND formatted as V1 V0 U1 U0 X3 X2 X1 X0
 # Need formatted as X3 X2 V1 U1 V0 U0 X1 X0
@@ -124,7 +125,7 @@ def parseRawEvent(rawEventLines):
     event = [1337]
 
     for line in rawEventLines:
-        if str(line[0:4]) != 'TIME':
+        if str(line[0:4]) == 'TIME' and rawEventLines.index(line) == 0:
             print 'PANICKING: WHERE IS THE TIME MARKER?!?!?!'
             # TODO if time info is important?
             continue
@@ -134,7 +135,7 @@ def parseRawEvent(rawEventLines):
             # TODO error checking for raw Data file
 
             header = lines[0]
-            bcid = int(header[4:])
+            bcid = int(header[4:],16)
             event.append(bcid)
             for i in range(4):
                 hits.append(lines[i+1])
@@ -156,7 +157,8 @@ def rawDecode(hit, ip, id):
     if offsetFlag == 1:
         if verbose:
             print "Added offset!"
-        strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[iplane],16)
+        if (int(hit[id*4:id*4+4],16) != 0) and sum([int(x,16) for x in offsets])!= 0:
+            strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[ip],16)
     else:
         strip = int(hit[id*4:id*4+4],16)
     if strip is not 0:
@@ -181,11 +183,12 @@ def rawDecode(hit, ip, id):
 # the live display takes raw data from FIFO 23 and decodes it 
 # TODO build a "pause" button
 def goLive(fileName):
+    print fileName
     numberDisplayed = 1
     while True:
         unused = os.system('clear') # avoid printing return val
         revLines = list(reversed(open(fileName,'r').readlines()))
-        lastEventLines = list(reversed(revLines[0:10]))
+        lastEventLines = list(reversed(revLines[0:9]))
         lastEvent = parseRawEvent(lastEventLines)
         if verbose:
             print lastEvent
@@ -314,22 +317,26 @@ def ascii_display_event(event):
     i = 0
     octBoardOrder = ['X3', 'X2', 'V1', 'U1', 'V0', 'U0', 'X1', 'X0']
 
+    print event
     eventNo = event[0]
     eventBCID = event[1]
     eventBoards = event[2:]
     print "Event Number: %i, Event BCID: %i" % (eventNo, eventBCID)
-
+    
     for index in octBoardMap:
         board = eventBoards[index]
         vmmID = board[0]
         channel = board[1]
         hitMark = [".. "]*8  
-        if index in flippedBoards:
-            hitMark[8-vmmID-1] = "%2i " % channel
-        else:
-            hitMark[vmmID] = "%2i " % channel
-        print '{:^20}'.format(''.join(octBoardOrder[i]))\
-                    +'{:^20}'.format(''.join(hitMark))
+        if (vmmID!=0 or channel!=0):
+            if index in flippedBoards:
+                hitMark[8-vmmID-1] = "%2i " % channel
+            else:
+                hitMark[vmmID] = "%2i " % channel
+        print octBoardOrder[i], "".join(hitMark)
+#        print '{:^20}'.format(''.join(hitMark))
+#        print '{:^20}'.format(''.join(octBoardOrder[i]))\
+#                    +'{:^20}'.format(''.join(hitMark))
         i = i + 1
         
 

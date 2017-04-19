@@ -29,7 +29,8 @@ def decode(offsetflag, remapflag, octgeo, overall_offset, offsets, remapping, hi
     strip = 0
     if offsetflag == 1:
         print "Added offset!"
-        strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[iplane],16)
+        if (int(hit[id*4:id*4+4],16) != 0) and sum([int(x,16) for x in offsets])!= 0:
+            strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[ip],16)
     else:
         strip = int(hit[id*4:id*4+4],16)
     if strip is not 0:
@@ -57,7 +58,7 @@ def main(argv):
     inputfile = ''
     outputfile = ''
     try:
-        opts, args = getopt.getopt(argv, "hi:o:r:f:oct", ["ifile=", "ofile="])
+        opts, args = getopt.getopt(argv, "hi:o:rf", ["ifile=", "ofile="])
     except getopt.GetoptError:
         print 'decodeFIND_32bit.py -i <inputfile> -o <outputfile> [-r] [-f]'
         sys.exit(2)
@@ -89,8 +90,10 @@ def main(argv):
     chs = [] #channel number
 
     remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
-    offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])
-    overall_offset = "C00"
+    offsets = ["3A","3A","47","47","40","40","40","40"]
+#    offsets = ["40","40","47","3A","47","3A","40","40"][::-1]
+#    offsets = reversed(["856","85B","84A","84F","84A","84F","856","85B"])
+    overall_offset = "000"
     nevent = 0
     for line in datafile:
         if str(line[0:4]) =='TIME':
