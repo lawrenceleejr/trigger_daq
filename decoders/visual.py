@@ -8,6 +8,8 @@ class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[34m'
     ANNFAV = '\033[38;5;86;48;5;25m'
+    DES = '\033[38;5;205m' # pink foreground, white background
+    DARK = '\033[38;5;27m' # blue foreground, white background
     OKGREEN = '\033[92m'
     WARNING = '\033[38;5;227;48;5;232m'
     FAIL = '\033[91m'

@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 # Decoded output form for FIT packets out of the GBT decoder
 # currently header
@@ -48,9 +49,13 @@ def main(argv):
     # option flags
     offsetflag = 0
     octgeo = 1
+    fulldata = 0 #prints crap like roi, dtheta, etc
     
     inputfile = ''
     outputfile = ''
+    colors = visual.bcolors()
+    consts = commonTrig.tconsts()
+
     try:
         opts, args = getopt.getopt(argv, "hi:o:rf", ["ifile=", "ofile="])
     except getopt.GetoptError:
@@ -70,10 +75,8 @@ def main(argv):
     if (offsetflag):
         print "Adding offsets!"
     else:
-        print "No offsets!"
+        print colors.WARNING + "No offsets!" + colors.ENDC
     
-    colors = visual.bcolors()
-    consts = commonTrig.tconsts()
     num_lines = sum(1 for line in open(inputfile))
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
@@ -90,9 +93,9 @@ def main(argv):
     offsets = ["3A","3A","47","47","40","40","40","40"]
     overall_offset = "000"
     nevent = 0
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
-    print colors.ANNFAV + "\tDecoding!\t" + "(>'-')> <('-'<) ^(' - ')^ <('-'<) (>'-')>\t "+ colors.ENDC
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
+    print "\n"
+    print colors.DARK + "Decoding!       " + "ψ ︿_____︿_ψ_ ☾\t "+ colors.ENDC
+    print "\n"
     for line in datafile:
         if str(line[0:4]) == 'TIME' :
             timestamp = int(float(line[6:-1]))
@@ -127,22 +130,35 @@ def main(argv):
 
             # trigger calcs
             roi = lines[9][0:4]
+            roi_dec = int(lines[9][0:4],16)
             dtheta = lines[9][4:]
+            dtheta_dec = int(lines[9][4:],16)
             mx_roi = lines[10][0:4]
+            mx_roi_dec = int(lines[10][0:4],16)
             mx_local = lines[10][4:]
             mx_local_dec = int(mx_local,16)
 #            mx_local_dec = (mx_local_dec & 0x7FFF) - (mx_local_dec & 0x8000)
             if (mx_local_dec > 0x7fff):
                 mx_local_dec -= 0x10000
             mv_global = lines[11][0:4]
-            mu_global = lines[11][4:0]
-            mx_global_my = lines[12][0:4]
+            mv_global_dec = int(lines[11][0:4],16)
+            mu_global = lines[11][4:]
+            mu_global_dec = int(lines[11][4:],16)
+            mx_global = lines[12][0:4]
+            mx_global_dec = int(lines[12][0:4],16)
             counter = int(lines[12][4:],16)
 
             decodedfile.write('\n' + str(header) + " BCID: " + str(int(bcid,16)))
             for ib in range(8):
                 decodedfile.write('\n' + str(vmms[ib]) + ' ' + str(chs[ib]))
             decodedfile.write('\n' + 'mx_local ' + str(mx_local) + ' ' + str(mx_local_dec/pow(2,14.)))
+            if (fulldata):
+                decodedfile.write('\n' + 'roi ' + str(roi_dec) )
+                decodedfile.write('\n' + 'dtheta ' + str(dtheta_dec/pow(2,30)) )
+                decodedfile.write('\n' + 'mx_roi ' + str(mx_roi_dec/pow(2,16)) )
+                decodedfile.write('\n' + 'mv_global ' + str(mv_global_dec/pow(2,16)) )
+                decodedfile.write('\n' + 'mu_global ' + str(mu_global_dec/pow(2,16)) )
+                decodedfile.write('\n' + 'mx_global ' + str(mx_global_dec/pow(2,16)) )
             decodedfile.write('\n' + 'cntr ' + str(counter))
             decodedfile.write('\n')
             lines = []
@@ -153,10 +169,8 @@ def main(argv):
     decodedfile.close()
     datafile.close()
     print "\n"
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
-    print colors.ANNFAV + "\tDone decoding, exiting! \t\t\t\t\t "+ colors.ENDC
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
-    
+    print colors.DES + "Done decoding!  " + "ψ ︿_____︿_ψ_ ☼\t "+ colors.ENDC
+    print "\n"
 
 if __name__ == "__main__":
     main(sys.argv[1:])
