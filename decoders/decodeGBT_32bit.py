@@ -97,7 +97,7 @@ def main(argv):
                         boardlist.append((31-i)/8)
                         vmmlist.append((31-i)%8)
             if (abs(addc1-int(bcid,16)) != 1 and abs(addc1-int(bcid,16)) != 4096) and Aflag:
-                decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n\n")
+                decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n")
                 nlines = 0
                 if (nevent % (num_lines/(10*win*4)) == 0):
                     visual.update_progress(float(nevent)/num_lines*win*4.)
@@ -109,30 +109,35 @@ def main(argv):
             else:
                 addc2 = int(bcid,16)
                 Aflag = True
-            decodedfile.write( "BCID: {0} Hits: {1}".format(int(bcid,16),len(vmmlist)) + '\n')
-            reversedBoardList = reversed(boardlist)
-            reversedBoardStringList = [str(x) for x in reversedBoardList]
-            reversedVMMList = reversed(vmmlist)
-            reversedVMMStringList = [str(x) for x in reversedVMMList]
-            reversedVMMData = reversed(vmmdata)
-            reversedVMMStringData = [str(x) for x in reversedVMMData]
-            for ind, elem in enumerate(reversedBoardStringList):
-                decodedfile.write(elem + " " + reversedVMMStringList[ind] + " " + reversedVMMStringData[ind]+'\n')
-                if (ind == 7):
-                    nwarning = nwarning + 1
-                    if nwarning == 30:
-                        print colors.FAIL + "Warning reached maximum of 30 events, suppressing warnings" + colors.ENDC
-                    if (nwarning < 30):
-                        print hitmap
-                        print colors.WARNING + "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!" + colors.ENDC
-                    break
-            decodedfile.write("\n")
 
+            # write to file
+            decodedfile.write("BCID: %4i Hits: %i\n" % (int(bcid,16), len(vmmlist)))
+            for ibo in xrange(4):
+                arts = []
+                for board, vmm, art in zip(boardlist[::-1], vmmlist[::-1], vmmdata[::-1]):
+                    if int(board) == ibo:
+                        arts.append([vmm, art])
+                write_me = "%s %s" % (ibo, " ".join(["%s,%s" % (vmm, art) for vmm,art in arts]))
+                decodedfile.write(write_me+"\n")
+
+            # warn with aggressive colors
+            if len(boardlist) > 7:
+                print
+                print colors.WARNING
+                print "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!"
+                print colors.ENDC
+                print "Hitmap:     ", hitmap
+                print "Board list: ", boardlist[::-1]
+                print "VMM list:   ", vmmlist[::-1]
+                print "VMM data:   ", vmmdata[::-1]
+                print
+                break
+
+            # json
             tmpKey = str(int(bcid,16))
             if tmpKey in outputData:
                 tmpKey = tmpKey+"_1"
             outputData[tmpKey] = zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
-
 
     with open(outputfile.split(".")[0]+".json", 'w') as outputJSONFile:
         json.dump(outputData, outputJSONFile)
