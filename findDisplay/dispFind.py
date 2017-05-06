@@ -28,6 +28,8 @@ overall_offset = "000"
 # Need formatted as X3 X2 V1 U1 V0 U0 X1 X0
 # octBoardMap takes care of this reordering for us
 octBoardMap = [4, 5, 0, 2, 1, 3, 6, 7] 
+octBoardOrder = ['X3', 'X2', 'V1', 'U1', 'V0', 'U0', 'X1', 'X0']
+findBoardOrder = ['V1','V0','U1','U0','X3','X2','X1','X0']
 
 # VMMs on some boards is flipped S.T. channel 64 is where we'd expect 0
 # currently, flipped boards are: X2, V1, V0, X0
@@ -65,16 +67,6 @@ def getEvent(eventNo, dataLines):
 
     if verbose:
         print "Getting eventNo %i from line %i" % (eventNo, lineNum)
-
-    # check if eventNo is valid
-    # why does indexError not happen when I exceed indexes?
-    #try:
-    #    eventLines = dataLines[lineNum:lineNum + 10]
-    #    print len(dataLines)
-    #except IndexError:
-    #    if verbose:
-    #        print "Selected eventNo does not exist... sorry!"
-    #    return event
 
     eventLines = dataLines[lineNum:lineNum+10]
     if verbose:
@@ -121,7 +113,7 @@ def parseRawEvent(rawEventLines):
 
     lines = []
     hits = []
-    event = [1337]
+    event = [0]
 
     for line in rawEventLines:
         if str(line[0:4]) == 'TIME' and rawEventLines.index(line) == 0:
@@ -179,19 +171,80 @@ def rawDecode(hit, ip, id):
 # "live" display of data, just looks at last event recorded in the file after some
 # time
 # the live display takes raw data from FIFO 23 and decodes it 
+# FREQUENT algorithm in http://erikdemaine.org/papers/NetworkStats_ESA2002/paper.pdf
 def goLive(fileName):
-    print fileName
     numberDisplayed = 1
+    numCounters = 10
+    boardHits = [[64,64],0,'N/A'] * numCounters 
+    found = 0
+    i = 0
     while True:
         try:
             unused = os.system('clear') # avoid printing return val
             revLines = list(reversed(open(fileName,'r').readlines()))
             lastEventLines = list(reversed(revLines[0:9]))
             lastEvent = parseRawEvent(lastEventLines)
+
             if verbose:
                 print lastEvent
                 print "now sleeping..."
             display_hub([lastEvent])
+
+            # keep track of statistics using FREQUENT alg
+            for hit in lastEvent[2:]:
+                # ignore [0,0] hits
+                if hit == [0,0]: # eh?
+                    i = i + 1
+                    continue
+                # check if we've seen this hit before
+                for index,item in enumerate(boardHits):
+                    if hit == item:
+                        if findBoardOrder[i] == boardHits[index+2]:
+                            found = 1
+                            boardHits[index+1] = boardHits[index+1] + 1
+                            break
+                # else check if there's any 0 weighted items to replace
+                if not found:
+                    for index, item in enumerate(boardHits):
+                        if item == 0:
+                            found = 1
+                            boardHits[index-1] = hit
+                            boardHits[index] = 1
+                            boardHits[index+1] = str(findBoardOrder[i])
+                            break 
+                # else decrement weight of all tracked items 
+                if not found:
+                    for index, item in enumerate(boardHits): 
+                        if isinstance(item,(int)):
+                            boardHits[index] = boardHits[index] - 1
+                        if boardHits[index] == 0:
+                            boardHits[index+1] = 'N/A'
+                found = 0
+                i = i + 1
+
+
+            print "Top ten most frequent channels:"
+            freqHits = []
+            null = 0
+            for index, item in enumerate(boardHits):
+                if isinstance(item, str):
+                    if item == 'N/A':
+                        null = null + 1
+                        continue
+                    hit = boardHits[index - 2]
+                    weight = boardHits [index - 1]
+                    VmmID = hit[0]
+                    channel = hit[1]
+                    freqHits.append([item, VmmID, channel, weight])
+            freqHits = sorted(freqHits, key=lambda x: x[3], reverse=True) 
+            totalWeight = sum(item[3] for item in freqHits)            
+
+            for hit in freqHits:
+                print 'Board: %s, VmmID: %i, Channel: %i, Weight %f' % (hit[0],hit[1],hit[2],float(hit[3])/float(totalWeight))
+
+            for i in range(0,null):
+                print 'N/A' 
+
             print "This is the %ith display I've shown, isn't it time you go home?" % numberDisplayed
             numberDisplayed = numberDisplayed + 1 
             time.sleep(2)
@@ -316,7 +369,6 @@ def display_hub(eventList):
 def ascii_display_event(event):
 
     i = 0
-    octBoardOrder = ['X3', 'X2', 'V1', 'U1', 'V0', 'U0', 'X1', 'X0']
 
     eventNo = event[0]
     eventBCID = event[1]
@@ -334,9 +386,6 @@ def ascii_display_event(event):
             else:
                 hitMark[vmmID] = "%2i " % channel
         print octBoardOrder[i], "".join(hitMark)
-#        print '{:^20}'.format(''.join(hitMark))
-#        print '{:^20}'.format(''.join(octBoardOrder[i]))\
-#                    +'{:^20}'.format(''.join(hitMark))
         i = i + 1
         
 
