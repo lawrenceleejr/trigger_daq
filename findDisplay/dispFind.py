@@ -177,7 +177,6 @@ def goLive(fileName):
     numCounters = 10
     boardHits = [[64,64],0,'N/A'] * numCounters 
     found = 0
-    i = 0
     while True:
         try:
             unused = os.system('clear') # avoid printing return val
@@ -190,6 +189,7 @@ def goLive(fileName):
                 print "now sleeping..."
             display_hub([lastEvent])
 
+            i = 0
             # keep track of statistics using FREQUENT alg
             for hit in lastEvent[2:]:
                 # ignore [0,0] hits
