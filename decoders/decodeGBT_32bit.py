@@ -96,7 +96,7 @@ def main(argv):
                     if (hitmap[i] is "1"):
                         boardlist.append((31-i)/8)
                         vmmlist.append((31-i)%8)
-            if (abs(addc1-int(bcid,16)) != 1 and abs(addc1-int(bcid,16)) != 4096) and Aflag:
+            if (abs(addc1-int(bcid,16)) != 1 and abs(addc1-int(bcid,16)) != 4095) and Aflag:
                 decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n")
                 nlines = 0
                 if (nevent % (num_lines/(10*win*4)) == 0):
