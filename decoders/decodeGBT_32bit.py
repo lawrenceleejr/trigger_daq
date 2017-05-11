@@ -112,26 +112,33 @@ def main(argv):
 
             # write to file
             decodedfile.write("BCID: %4i Hits: %i\n" % (int(bcid,16), len(vmmlist)))
+            nwarning = 0
             for ibo in xrange(4):
                 arts = []
-                for board, vmm, art in zip(boardlist[::-1], vmmlist[::-1], vmmdata[::-1]):
+                #if len(boardlist) > 8:
+                #     if (nwarning < 30):
+                #         nwarning = nwarning + 1
+                #         print hitmap
+                #         print colors.WARNING + "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!" + colors.ENDC
+                # if (nwarning == 30):
+                #     print colors.FAIL + "Warning reached maximum of 30 events, suppressing warnings" + colors.ENDC
+                for board, vmm, art in zip(boardlist[::-1][0:8], vmmlist[::-1][0:8], vmmdata[::-1]):
                     if int(board) == ibo:
                         arts.append([vmm, art])
                 write_me = "%s %s" % (ibo, " ".join(["%s,%s" % (vmm, art) for vmm,art in arts]))
                 decodedfile.write(write_me+"\n")
 
             # warn with aggressive colors
-            if len(boardlist) > 7:
-                print
-                print colors.WARNING
-                print "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!"
-                print colors.ENDC
-                print "Hitmap:     ", hitmap
-                print "Board list: ", boardlist[::-1]
-                print "VMM list:   ", vmmlist[::-1]
-                print "VMM data:   ", vmmdata[::-1]
-                print
-                break
+            # if len(boardlist) > 7:
+            #     print
+            #     print colors.WARNING
+            #     print "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!"
+            #     print colors.ENDC
+            #     print "Hitmap:     ", hitmap
+            #     print "Board list: ", boardlist[::-1]
+            #     print "VMM list:   ", vmmlist[::-1]
+            #     print "VMM data:   ", vmmdata[::-1]
+            #     print
 
             # json
             tmpKey = str(int(bcid,16))
