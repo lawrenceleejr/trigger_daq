@@ -24,21 +24,24 @@
 
 import sys, getopt,binstr, time, visual, commonTrig
 
-def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id, flippedboards):
+nevent = 0
+
+def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id, flippedboards, occ):
     strip = 0
     if offsetflag == 1:
         if (int(hit[id*4:id*4+4],16) != 0):
             strip = int(hit[id*4:id*4+4],16)-int(overall_offset,16)-int(offsets[ip],16)
     else:
         strip = int(hit[id*4:id*4+4],16)
-    if strip is not 0:
-#        if ((ip == 2) or (ip == 3) or (ip == 4) or (ip == 6)) and (octgeo == 1):
-        # FTS
+    if int(occ[ip])==1:
         if ip in flippedboards and (octgeo == 1):
-#        if ((ip == 0) or (ip == 1) or (ip == 5) or (ip == 7)) and (octgeo == 1):
             strip = 512-strip-1
         ivmm = (strip/64)%8
         ich = strip%64+1
+    elif strip is not 0 and int(occ[ip])==0:
+        print colors.WARNING + "Occupancy header isn't 0 but strip is!" + colors.ENDC
+        print "Event",nevent
+        print hit,"on plane", ip
     else:
         ivmm = 0
         ich = 0
@@ -53,22 +56,25 @@ def main(argv):
     
     inputfile = ''
     outputfile = ''
+    run = -1
     colors = visual.bcolors()
     consts = commonTrig.tconsts()
 
     try:
-        opts, args = getopt.getopt(argv, "hi:o:rf", ["ifile=", "ofile="])
+        opts, args = getopt.getopt(argv, "hi:o:r:f", ["ifile=", "ofile=", "run="])
     except getopt.GetoptError:
-        print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> [-f]'
+        print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> [-f]'
+            print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f]'
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
         elif opt in ("-o", "--ofile"):
             outputfile = arg
+        elif opt in ("-r", "--run"):
+            run = int(arg)
         elif opt == '-f':
             offsetflag = 1
 
@@ -76,23 +82,25 @@ def main(argv):
         print "Adding offsets!"
     else:
         print colors.WARNING + "No offsets!" + colors.ENDC
+
+    if (run==-1):
+        print colors.FAIL + "No run number!" + colors.ENDC
+        sys.exit(2)
+        
+    if (run < 3522):
+        print colors.WARNING + "Using flipped offsets!" + colors.ENDC
     
     num_lines = sum(1 for line in open(inputfile))
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
 
-    eventnum = 0
     n = 5 #starting pt of data
     lines = []
     hits = []
     strips = [] #raw strip number after offsets
-    rawvmms = [] #vmm number without remapping
-    vmms = [] #vmm number after remapping
+    vmms = [] #vmm number
     chs = [] #channel number
 
-    offsets = ["3A","3A","47","47","40","40","40","40"]
-    overall_offset = "000"
-    nevent = 0
     print "\n"
     print colors.DARK + "Decoding!       " + "ψ ︿_____︿_ψ_ ☾\t "+ colors.ENDC
     print "\n"
@@ -110,6 +118,7 @@ def main(argv):
         lines.append(line[:len(line)-1])
         
         if len(lines) == 13: # groups of 13
+            global nevent
             nevent = nevent + 1
             if (nevent % (num_lines/(10*13)) == 0):
                 visual.update_progress(float(nevent)/num_lines*13.)
@@ -117,13 +126,17 @@ def main(argv):
 #                sys.stdout.flush()
             decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
             header = lines[0] #contains constants + BCID
+            occ = list("{:08b}".format(int(header[2:4],16)))
             bcid = header[4:]
             for i in range(4):
                 hits.append(lines[i+1])
             iplane = 0
             for hit in hits:
                 for j in range(2):
-                    ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, hit, iplane,j, consts.FLIPPEDBOARDS)
+                    if (run > 3521):
+                        ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, hit, iplane, j, consts.FLIPPEDBOARDS, occ)
+                    else:
+                        ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OLDOFFSETS, hit, iplane, j, consts.FLIPPEDBOARDS, occ)
                     vmms.append(ivmm)
                     chs.append(ich)
                     iplane = iplane + 1
