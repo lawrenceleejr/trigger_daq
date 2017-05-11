@@ -126,7 +126,7 @@ def main(argv):
 #                sys.stdout.flush()
             decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
             header = lines[0] #contains constants + BCID
-            occ = list("{:08b}".format(int(header[2:4],16)))
+            occ = list(format(int(header[2:4],16),"08b"))
             bcid = header[4:]
             for i in range(4):
                 hits.append(lines[i+1])
