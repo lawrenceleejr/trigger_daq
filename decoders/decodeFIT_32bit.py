@@ -53,6 +53,7 @@ def main(argv):
     offsetflag = 0
     octgeo = 1
     fulldata = 0 #prints crap like roi, dtheta, etc
+    slopeflag = 0
     
     inputfile = ''
     outputfile = ''
@@ -61,13 +62,13 @@ def main(argv):
     consts = commonTrig.tconsts()
 
     try:
-        opts, args = getopt.getopt(argv, "hi:o:r:f", ["ifile=", "ofile=", "run="])
+        opts, args = getopt.getopt(argv, "hi:o:r:fs", ["ifile=", "ofile=", "run="])
     except getopt.GetoptError:
-        print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f]'
+        print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f] [-s]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f]'
+            print 'decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f] [-s]'
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
@@ -77,6 +78,8 @@ def main(argv):
             run = int(arg)
         elif opt == '-f':
             offsetflag = 1
+        elif opt == "-s":
+            slopeflag = 1
 
     if (offsetflag):
         print "Adding offsets!"
@@ -97,10 +100,12 @@ def main(argv):
     n = 5 #starting pt of data
     lines = []
     hits = []
-    strips = [] #raw strip number after offsets
+    slopes = [] #raw strip number after offsets
     vmms = [] #vmm number
     chs = [] #channel number
-
+    svmms = []
+    schs = []
+    
     print "\n"
     print colors.DARK + "Decoding!       " + "ψ ︿_____︿_ψ_ ☾\t "+ colors.ENDC
     print "\n"
@@ -140,6 +145,19 @@ def main(argv):
                     vmms.append(ivmm)
                     chs.append(ich)
                     iplane = iplane + 1
+            if (slopeflag):
+                for i in range(4,8):
+                    slopes.append(lines[i+1])
+                iplane = 0
+                for slope in slopes:
+                    for j in range(2):
+                        if (run > 3521):
+                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, slope, iplane, j, consts.FLIPPEDBOARDS, occ)
+                        else:
+                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OLDOFFSETS, slope, iplane, j, consts.FLIPPEDBOARDS, occ)
+                        svmms.append(ivmm)
+                        schs.append(ich)
+                        iplane = iplane + 1
 
             # trigger calcs
             roi = lines[9][0:4]
@@ -164,6 +182,8 @@ def main(argv):
             decodedfile.write('\n' + str(header) + " BCID: " + str(int(bcid,16)))
             for ib in range(8):
                 decodedfile.write('\n' + str(vmms[ib]) + ' ' + str(chs[ib]))
+                if (slopeflag):
+                    decodedfile.write(' ' + str(svmms[ib]) + ' ' + str(schs[ib]))
             decodedfile.write('\n' + 'mx_local ' + str(mx_local) + ' ' + str(mx_local_dec/pow(2,14.)))
             if (fulldata):
                 decodedfile.write('\n' + 'roi ' + str(roi_dec) )
@@ -176,9 +196,11 @@ def main(argv):
             decodedfile.write('\n')
             lines = []
             hits = []
-            strips = []
+            slopes = []
             vmms = []
             chs = []
+            svmms = []
+            schs = []
     decodedfile.close()
     datafile.close()
     print "\n"
