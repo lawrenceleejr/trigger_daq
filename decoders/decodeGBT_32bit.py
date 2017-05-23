@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Decoded output format for GBT packets
@@ -115,7 +115,6 @@ def main(argv):
                 buflen = 0
                     
                 #### progress bar ####
-                print num_lines
                 if num_lines > (10*win*4):
                     if (nevent % (num_lines/(10*win*4)) == 0 ):
                         visual.update_progress(float(nevent)/num_lines*win*4.)
