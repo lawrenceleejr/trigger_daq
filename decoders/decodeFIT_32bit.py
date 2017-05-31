@@ -60,6 +60,7 @@ def main(argv):
     run = -1
     colors = visual.bcolors()
     consts = commonTrig.tconsts()
+    start_time = time.time()
 
     try:
         opts, args = getopt.getopt(argv, "hi:o:r:fs", ["ifile=", "ofile=", "run="])
@@ -109,7 +110,11 @@ def main(argv):
     print "\n"
     print colors.DARK + "Decoding!       " + "ψ ︿_____︿_ψ_ ☾\t "+ colors.ENDC
     print "\n"
-    for line in datafile:
+    for iline,line in enumerate(datafile):
+
+        if iline % 50000 == 0 and iline > 0:
+            visual.pbftp(time.time() - start_time, iline, num_lines)
+
         if str(line[0:4]) == 'TIME' :
             timestamp = int(float(line[6:-1]))
             timestampsec = timestamp/pow(10,9)
@@ -125,10 +130,6 @@ def main(argv):
         if len(lines) == 13: # groups of 13
             global nevent
             nevent = nevent + 1
-            if (nevent % (num_lines/(10*13)) == 0):
-                visual.update_progress(float(nevent)/num_lines*13.)
-#                sys.stdout.write("#")
-#                sys.stdout.flush()
             decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
             header = lines[0] #contains constants + BCID
             occ = list(format(int(header[2:4],16),"08b"))
