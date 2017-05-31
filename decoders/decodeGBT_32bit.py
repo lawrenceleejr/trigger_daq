@@ -1,161 +1,168 @@
-#!/usr/bin/python
+#/usr/bin/python
+# -*- coding: utf-8 -*-
 
 # Decoded output format for GBT packets
-# 16 bytes for every "strobe" - 128 bits 
+# 16 bytes for every "strobe" - 128 bits
 # data: 12 bits of BCID + 8 bits of ERR_FLAGS + 32 bits of HITLIST + 8 bits of art data parity + 8 * 6 bits of art data
-# constant C,E written out somewhere
+# constant C,E written out somewhere   
 
-# A.Wang, last edited April 10, 2017
+# A.Wang, last edited May 16, 2017
 
 
-import sys, getopt,binstr
-import json
-import collections, visual
+import sys, getopt,binstr, time, visual, commonTrig
+import argparse
+
 
 def main(argv):
-    remapflag = 0
-    inputfile = ''
-    outputfile = ''
-    try:
-        opts, args = getopt.getopt(argv, "hi:o:r:w:", ["ifile=", "ofile="])
-    except getopt.GetoptError:
-        print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> -w <windowlength> [-r]'
-        print 'window length should be the BCID window for each GBT packet event'
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print 'decodeGBT_32bit.py -i <inputfile> -o <outputfile> -w <windowlength> [-r]'
-            print 'window length should be the BCID window for each GBT packet event'
-            sys.exit()
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt in ("-o", "--ofile"):
-            outputfile = arg
-        elif opt in ("-w"):
-            win = 2*int(arg)
-        elif opt in ("-r"):
-            remapflag = 1
 
     colors = visual.bcolors()
-    num_lines = sum(1 for line in open(inputfile))
-    datafile = open(inputfile, 'r')
-    decodedfile = open(outputfile, 'w')
+    consts = commonTrig.tconsts()
 
-    outputData = collections.OrderedDict()
-
-    nevent = 0
-    addc1 = -1
-    addc2 = -1
-    Aflag = True
+    args = options()
     
-    n = 5 #starting pt of data
-    nlines = -1
+    num_lines = sum(1 for line in open(args.ifile))
+    datafile = open(args.ifile, 'r')
+    decodedfile = open(args.ofile, 'w')
+
     lines = []
-    nwarning = 0
-    remapping = [11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4, 27, 26, 25, 24, 31, 30, 29, 28, 19, 18, 17, 16, 23, 22, 21, 20]
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
-    print colors.ANNFAV + "\tDecoding!\t" + "(>'-')> <('-'<) ^(' - ')^ <('-'<) (>'-')>\t "+ colors.ENDC
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
+
+    # previous bcids
+    (addc1,addc2) = (-1,-1)
+    
+    Aflag = True
+    win = 30 # expected buffer length
+    buflen = win-1
+    oldtime = -1
+    (nexcess, nshort, dropped) = (0,0,0)
+    badgbt = []
+    gbtlen = []
+    times = []
+
+    print "\n"
+    print colors.DARK + "Decoding!       " + "ψ ︿_____︿_ψ_ ☾\t "+ colors.ENDC
+    print "\n"
+
+    print "Will not catch > 15+ bugs!"
+    
+    nevent = 0
+    (timestamp,timestampsec,timestampns) = (-1,-1,-1)
+
     for line in datafile:
-        if str(line[0:4]) =='TIME':
+        if str(line[0:4]) == 'TIME' :
             timestamp = int(float(line[6:-1]))
             timestampsec = timestamp/pow(10,9)
             timestampns = timestamp%pow(10,9)
             continue
-        # if (nlines == -1 or nlines % (win*4) == 0):
-        #     decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n\n")
-        #     nevent = nevent + 1
-        #     nlines = 0
-        #     if (nevent % (num_lines/(10*win*4)) == 0):
-        #         visual.update_progress(float(nevent)/num_lines*win*4.)
-#        nlines = nlines + 1
         lines.append(line[:len(line)-1])
-        if len(lines) == 4:
-            strobe = ''.join(map(str,lines))
-            artdata = strobe[n+15:n+27] 
+
+        n = 5 # start pt of data
+        if len(lines) == 4: # groups of 4
+            strobe = "".join(map(str,lines))
+            artdata = strobe[n+15:n+27]
             parity = strobe[n+13:n+15]
             hitmap = strobe[n+5:n+13]
             hitmap = "{0:032b}".format(int(hitmap,16))
-            #print "HITMAP!: ",hitmap
             error = strobe[n+3:n+5]
             bcid = strobe[n:n+3]
-            lines = []
             artdata = "{0:048b}".format(int(artdata,16))
+
             vmmdata = []
             vmmlist = []
             boardlist = []
+
+            buflen += 1
+            #print buflen, int(bcid, 16)
+
             for i in range(8):
                 vmmdata.append(int(artdata[i*6:i*6+6],2)+1)
-            if remapflag == 1:
-                for i in range(len(remapping)):
-                    if (hitmap[i] is "1"):
-                        boardlist.append((31-remapping[i])/8)
-                        vmmlist.append((31-remapping[i])%8)
-            else:
-                for i in range(32):
-                    if (hitmap[i] is "1"):
-                        boardlist.append((31-i)/8)
-                        vmmlist.append((31-i)%8)
-            if (abs(addc1-int(bcid,16)) != 1 and abs(addc1-int(bcid,16)) != 4095) and Aflag:
-                decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n")
-                nlines = 0
-                if (nevent % (num_lines/(10*win*4)) == 0):
-                    visual.update_progress(float(nevent)/num_lines*win*4.)
-                nevent = nevent + 1
+
+            for i in range(32):
+                if (hitmap[i] is "1"):
+                    boardlist.append((31-i)/8)
+                    vmmlist.append((31-i)%8)
+
+            excluded = [286202,306851,446152,532552,570143,757921,825138,1038996,1134297,
+                        1155745,1169477,1170888,1177961]
+            
+            #######################################################################################################
+            # alternative implementation of logic for starting new event:
+            # jumps in bcid and we expect it to jump
+            # or it jumps a lot in bcid (>2) and we don't expect it to
+            # or it doesn't jump but we expect it to and the timestamp changed, at least
+            # or it was one of those stupid events where it doesn't jump but we are pretty sure it's a new trigger
+            # if ((int(bcid,16)-addc1) != 1 and addc1-int(bcid,16) != 4095 and Aflag and buflen == win)\
+            #    or (abs(int(bcid,16)-addc1) > 2 and abs(addc1-int(bcid,16)) < 4095 and Aflag)\
+            #    or (((int(bcid,16)-addc1) == 1 or addc1-int(bcid,16) == 4095) and Aflag and timestamp != oldtime and buflen == win)\
+            #    or (((int(bcid,16)-addc1) == 1 or addc1-int(bcid,16) == 4095) and Aflag and nevent in excluded and buflen == win):
+            #######################################################################################################
+            
+            # current implementation of logic for starting new event
+            # we collect 15 packets
+            # or it jumps a lot in bcid and we don't expect it to
+            if (buflen == win) or (abs(int(bcid,16)-addc1) > 2 and abs(addc1-int(bcid,16)) < 4095 and Aflag):
+                if (buflen < win):
+                    nshort += 1
+                    badgbt.append(nevent)
+                    gbtlen.append(buflen)
+                    times.append(int(timestamp))
+                    #print colors.WARNING + "Event " + str(nevent) + " has fewer than 15 GBT packets!" + colors.ENDC
+                    
+                    
+                # starting new event
+                nevent += 1
+                #print "Event", nevent
                 Aflag = True
+                buflen = 0
+                    
+                #### progress bar ####
+                if num_lines > (10*win*4):
+                    if (nevent % (num_lines/(10*win*4)) == 0 ):
+                        visual.update_progress(float(nevent)/num_lines*win*4.)
+                ######################
+                    
+                decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n")
+
             if (Aflag):
                 addc1 = int(bcid,16)
                 Aflag = False
             else:
                 addc2 = int(bcid,16)
                 Aflag = True
-
-            # write to file
-            decodedfile.write("BCID: %4i Hits: %i\n" % (int(bcid,16), len(vmmlist)))
-            nwarning = 0
-            for ibo in xrange(4):
-                arts = []
-                #if len(boardlist) > 8:
-                #     if (nwarning < 30):
-                #         nwarning = nwarning + 1
-                #         print hitmap
-                #         print colors.WARNING + "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!" + colors.ENDC
-                # if (nwarning == 30):
-                #     print colors.FAIL + "Warning reached maximum of 30 events, suppressing warnings" + colors.ENDC
-                for board, vmm, art in zip(boardlist[::-1][0:8], vmmlist[::-1][0:8], vmmdata[::-1]):
-                    if int(board) == ibo:
-                        arts.append([vmm, art])
-                write_me = "%s %s" % (ibo, " ".join(["%s,%s" % (vmm, art) for vmm,art in arts]))
-                decodedfile.write(write_me+"\n")
-
-            # warn with aggressive colors
-            # if len(boardlist) > 7:
-            #     print
-            #     print colors.WARNING
-            #     print "Event: " + str(nevent) + ", Hit map has more hits than room for channels! Stopping early!"
-            #     print colors.ENDC
-            #     print "Hitmap:     ", hitmap
-            #     print "Board list: ", boardlist[::-1]
-            #     print "VMM list:   ", vmmlist[::-1]
-            #     print "VMM data:   ", vmmdata[::-1]
-            #     print
-
-            # json
-            tmpKey = str(int(bcid,16))
-            if tmpKey in outputData:
-                tmpKey = tmpKey+"_1"
-            outputData[tmpKey] = zip(boardlist[::-1], vmmlist[::-1],vmmdata[::-1])
-
-    with open(outputfile.split(".")[0]+".json", 'w') as outputJSONFile:
-        json.dump(outputData, outputJSONFile)
-
+            oldtime = timestamp
+            if (buflen >= win):
+                if (buflen == (win)):
+                    nexcess += 1
+                    print "\n"
+                    print colors.WARNING + "Event " + str(nevent) + " has more than 15 GBT packets!" + colors.ENDC
+            else:
+                decodedfile.write("BCID: %4i Hits: %i\n" % (int(bcid,16),len(vmmlist)))
+                for ibo in xrange(4):
+                    arts = []
+                    for board,vmm,art in zip(boardlist[::-1][0:8],vmmlist[::-1][0:8],vmmdata[::-1]):
+                        if int(board) == ibo:
+                            arts.append([vmm,art])
+                    write_me = "%s %s" % (ibo, " ".join(["%s,%s" % (vmm, art) for vmm,art in arts]))
+                    decodedfile.write(write_me+"\n")
+            lines = []
+            
     decodedfile.close()
     datafile.close()
     print "\n"
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
-    print colors.ANNFAV + "\tDone decoding, exiting! \t\t\t\t\t "+ colors.ENDC
-    print colors.ANNFAV + "\t\t\t\t\t\t\t\t\t " + colors.ENDC
+    print colors.DES + "Done decoding!  " + "ψ ︿_____︿_ψ_ ☼\t "+ colors.ENDC
+    print "Found " + str(nshort)+ " bad GBT buffers, writing into gbterr.txt"
+    print "\n"
+
+    errfile = open("gbterr.txt", 'w')
+    for x in zip(badgbt,gbtlen,times):
+          errfile.write(str(x) + "\n")
+    errfile.close()
     
 
+def options():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ifile", "-i", default="", help="input file")
+    parser.add_argument("--ofile", "-o", default="", help="output file")
+    return parser.parse_args()
+    
 if __name__ == "__main__":
     main(sys.argv[1:])

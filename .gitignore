@@ -1,0 +1,8 @@
+*.pdf
+*.pyc
+*.dat
+*.txt
+*.json
+*.root
+*~
+*#

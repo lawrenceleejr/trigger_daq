@@ -13,125 +13,26 @@ import os
 import copy
 import math
 import ROOT
+import argparse
 
 import random
-ROOT.gErrorIgnoreLevel = ROOT.kWarning
-
-def throwToys():
-    '''little function from Alex to throw toys and get a simulated distribution'''
-    n_el   = 2
-    mean   = 0
-    sigmas = range(40, 50, 1)
-    events = 100000
-
-    window_dt = []
-    window_bc = []
-    latexs    = []
-
-    draw_me = True
-
-    for sigma in sigmas:
-
-        print "Generating sigma = %i" % (sigma)
-        
-        window_dt.append(ROOT.TH1F("window_dt_sigma%03i" % sigma, ";Largest #Deltat (#sigma = %i ns);"  % sigma, 100,    0, 400))
-        window_bc.append(ROOT.TH1F("window_bc_sigma%03i" % sigma, ";Largest #DeltaBC (#sigma = %i ns);" % sigma,  21, -0.5, 20.5))
-
-        for ev in xrange(events):
-            times = [random.gauss(mean, sigma) for el in xrange(n_el)]
-            window_dt[-1].Fill(max(times) - min(times))
-            window_bc[-1].Fill(int(max(times))/25 - int(min(times))/25)
-
-        window_dt[-1].Scale(1 / window_dt[-1].Integral())
-        window_bc[-1].Scale(1 / window_bc[-1].Integral())
-
-    return window_dt, window_bc
-    # if draw_me:
-    #     for hist in window_dt + window_bc:
-    #         hist.SetMaximum(0.6)
-    #         name = hist.GetName()
-    #         canv = ROOT.TCanvas(name, name, 800, 800)
-    #         canv.Draw()
-    #         hist.Draw("histsame")
-    #         canv.SaveAs(name+".pdf", "pdf")
-
-def setstyle():
-    ROOT.gROOT.SetBatch()
-#    ROOT.gStyle.SetOptStat(000000111)
-    ROOT.gStyle.SetPadTopMargin(0.1)
-    ROOT.gStyle.SetPadRightMargin(0.1)
-    ROOT.gStyle.SetPadBottomMargin(0.12)
-    ROOT.gStyle.SetPadLeftMargin(0.12)
-    ROOT.gStyle.SetPadTickX(1)
-    ROOT.gStyle.SetPadTickY(1)
-    ROOT.gStyle.SetPaintTextFormat(".2f")
-    ROOT.gStyle.SetTextFont(42)
-    ROOT.gStyle.SetOptFit(ROOT.kTRUE)
-
-def addCake():
-    image = ROOT.TImage.Open("cake.png")
-    npad = ROOT.TPad("l","l",0.,0.9,0.09,1.)
-    npad.Draw()
-    npad.cd()
-    image.Draw()
-    print "drew cake!"
-                      
-
-def findDiffPairs(hit_pos, hit_b, ranflag):
-    ''' find possible differences between pairs of hits'''
-    possCombs = list(it.combinations(hit_pos,2))
-    possboardCombs = list(it.combinations(hit_b,2))
-    diff = []
-    if not ranflag:
-        for comb in possCombs:
-            diff.append(comb[1]-comb[0])
-        return diff
-    else: #randomize by board number
-        for i, comb in enumerate(possCombs):
-            if (possboardCombs[i][1] > possboardCombs[i][0]):
-                diff.append(comb[1]-comb[0])
-            else:
-                diff.append(comb[0]-comb[1])
-        return diff
-            
-
-def processData(A, B, inline, flagA, flagB, triggerhits):
-    '''Takes a line with hits and parses it'''
-    board = int(inline[0])
-    vmm = int(inline[1])
-    ch = int(inline[2])
-    changed = False
-    ADDCA_boards = ['u1','v1','x2','x3']
-    ADDCB_boards = ['x0','x1','u0','v0']
-    vmm_indices = [i for i, x in enumerate(triggerhits["vmm"]) if x == vmm]
-    if (len(vmm_indices) > 0):
-        for j in vmm_indices:
-            if int(ch) == int(triggerhits["ch"][j]):
-                if (flagA): # flagA => ADDC A got data
-                    if triggerhits["board"][j] != ADDCA_boards[board]:
-                        continue
-                    A["b"].append(board)
-                    A["vmm"].append(vmm)
-                    A["ch"].append(ch)
-                    if (int(inline[0]) > 1):
-                        A["x"].append(board)
-                    else:
-                        A["uv"].append(board)
-                    changed = True
-                elif (flagB): # ADDC B got data
-                    if triggerhits["board"][j] != ADDCB_boards[board]:
-                        continue
-                    B["b"].append(board)
-                    B["vmm"].append(vmm)
-                    B["ch"].append(ch)
-                    if (int(inline[0]) < 2):
-                        B["x"].append(board)
-                    else:
-                        B["uv"].append(board)
-                    changed = True
-    return A,B,changed
 
 def main(argv):
+
+    # handles inputs
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gfile", default="", help="input GBT file")
+    parser.add_argument("--tfile", default="", help="input TP file")
+    args = parser.parse_args()
+
+    gbtfile = open(args.gfile, 'r')
+    triggerfile = open(args.tfile, 'r')
+
+    colors = decoders.visual.bcolors()
+    ROOT.gErrorIgnoreLevel = ROOT.kWarning
+
+#    file = ROOT.TFile.Open("GBTanalysis.root","recreate")
 
     # things we want to plot
     h1 = ROOT.TH1F("phase", "Phases", 17, -8.5, 8.5)
@@ -154,34 +55,6 @@ def main(argv):
     h_Bfirsthit_wind = ROOT.TH2F("First hit for ADDC B vs. ART spread", "First hit for ADDC B vs. ART spread", 15, -0.5, 14.5, 16, -0.5, 15.5)
     h_bufflen = ROOT.TH1F("Buffer Length", "Buffer Length", 20, -0.5, 20.5)
     h_hits_wind = ROOT.TH2F("Number of hits vs. ART spread", "Number of hits vs. ART spread", 21, -0.5, 20.5, 16, -0.5, 15.5)
-    
-    # handles inputs
-    inputfile = ''
-    outputfile = ''
-    tpfile = ''
-    helpmsg = 'gbtAnalysis.py -i <inputfile> -o <outputfile> -t <tpfile>'
-    try:
-        opts, args = getopt.getopt(argv, "hi:o:t:", ["ifile=", "ofile=", "tfile="])
-    except getopt.GetoptError:
-        print helpmsg
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print helpmsg
-            sys.exit()
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt in ("-o", "--ofile"):
-            outputfile = arg
-        elif opt in ("-t", "--tfile"):
-            tpfile = arg
-    datafile = open(inputfile, 'r')
-    triggerfile = open(tpfile, 'r')
-
-    colors = decoders.visual.bcolors()
-
-#    file = ROOT.TFile.Open("GBTanalysis.root","recreate")
-
 
     eventN = -1
 
@@ -224,7 +97,7 @@ def main(argv):
 
     teventnum = 0
 
-    datafilelines = datafile.read().splitlines()
+    gbtfilelines = gbtfile.read().splitlines()
     tpfilelines = triggerfile.read().splitlines()
     nline = 0
     ntpline = 0
@@ -277,10 +150,9 @@ def main(argv):
         if (df):
             print "NTPhits", ntphits
         while (foundMatch is False):
-#        for line in datafilelines:
-            if nline == len(datafilelines):
+            if nline == len(gbtfilelines):
                 break
-            line = datafilelines[nline]
+            line = gbtfilelines[nline]
             inline = line.split()
             if (len(inline) == 0):
                 nline = nline + 1
@@ -309,14 +181,14 @@ def main(argv):
             print "\n"
             nline = nline + 1
         # if we reach the end of the file, quit
-        if (nline == len(datafilelines)):
+        if (nline == len(gbtfilelines)):
             break
         # end loop now
         
         while (foundMatch == True):
-            if nline == len(datafilelines):
+            if nline == len(gbtfilelines):
                 break
-            inline = (datafilelines[nline]).split()
+            inline = (gbtfilelines[nline]).split()
             if len(inline) == 0:
                 nline = nline + 1
                 continue
@@ -445,11 +317,11 @@ def main(argv):
                             print i,bcid
             else: # reading data
                 if (nhit > 0 and len(inline) > 1):
-                    A,B,flag = processData(A, B, inline, flags[0], flags[1],tphits)
+                    A,B,flag,linehits = processData(A, B, inline, flags[0], flags[1],tphits)
                     if (df):
                         print A, B
                         print tphits
-                    nhit = nhit-1
+                    nhit = nhit-linehits
                     if (not flag):
                         continue
                     print "Flags:", flags[0],flags[1]
@@ -497,6 +369,10 @@ def main(argv):
             nline = nline + 1
 
     # plotting!
+
+    if not os.path.exists("gbt"):
+        os.makedirs("gbt")
+    os.chdir("gbt")
     
     setstyle()
 
@@ -954,6 +830,126 @@ def main(argv):
     h_coincBuff.Draw()
     c.Print("coincBuff.pdf")
     c.Clear()
+
+    os.chdir("../") # return to original directory
+
+def throwToys():
+    '''little function from Alex to throw toys and get a simulated distribution'''
+    n_el   = 2
+    mean   = 0
+    sigmas = range(40, 50, 1)
+    events = 100000
+
+    window_dt = []
+    window_bc = []
+    latexs    = []
+
+    draw_me = True
+
+    for sigma in sigmas:
+
+        print "Generating sigma = %i" % (sigma)
+        
+        window_dt.append(ROOT.TH1F("window_dt_sigma%03i" % sigma, ";Largest #Deltat (#sigma = %i ns);"  % sigma, 100,    0, 400))
+        window_bc.append(ROOT.TH1F("window_bc_sigma%03i" % sigma, ";Largest #DeltaBC (#sigma = %i ns);" % sigma,  21, -0.5, 20.5))
+
+        for ev in xrange(events):
+            times = [random.gauss(mean, sigma) for el in xrange(n_el)]
+            window_dt[-1].Fill(max(times) - min(times))
+            window_bc[-1].Fill(int(max(times))/25 - int(min(times))/25)
+
+        window_dt[-1].Scale(1 / window_dt[-1].Integral())
+        window_bc[-1].Scale(1 / window_bc[-1].Integral())
+
+    return window_dt, window_bc
+    # if draw_me:
+    #     for hist in window_dt + window_bc:
+    #         hist.SetMaximum(0.6)
+    #         name = hist.GetName()
+    #         canv = ROOT.TCanvas(name, name, 800, 800)
+    #         canv.Draw()
+    #         hist.Draw("histsame")
+    #         canv.SaveAs(name+".pdf", "pdf")
+
+def setstyle():
+    ROOT.gROOT.SetBatch()
+#    ROOT.gStyle.SetOptStat(000000111)
+    ROOT.gStyle.SetPadTopMargin(0.1)
+    ROOT.gStyle.SetPadRightMargin(0.1)
+    ROOT.gStyle.SetPadBottomMargin(0.12)
+    ROOT.gStyle.SetPadLeftMargin(0.12)
+    ROOT.gStyle.SetPadTickX(1)
+    ROOT.gStyle.SetPadTickY(1)
+    ROOT.gStyle.SetPaintTextFormat(".2f")
+    ROOT.gStyle.SetTextFont(42)
+    ROOT.gStyle.SetOptFit(ROOT.kTRUE)
+
+def addCake():
+    image = ROOT.TImage.Open("cake.png")
+    npad = ROOT.TPad("l","l",0.,0.9,0.09,1.)
+    npad.Draw()
+    npad.cd()
+    image.Draw()
+    print "drew cake!"
+                      
+
+def findDiffPairs(hit_pos, hit_b, ranflag):
+    ''' find possible differences between pairs of hits'''
+    possCombs = list(it.combinations(hit_pos,2))
+    possboardCombs = list(it.combinations(hit_b,2))
+    diff = []
+    if not ranflag:
+        for comb in possCombs:
+            diff.append(comb[1]-comb[0])
+        return diff
+    else: #randomize by board number
+        for i, comb in enumerate(possCombs):
+            if (possboardCombs[i][1] > possboardCombs[i][0]):
+                diff.append(comb[1]-comb[0])
+            else:
+                diff.append(comb[0]-comb[1])
+        return diff
+            
+
+def processData(A, B, inline, flagA, flagB, triggerhits):
+    '''Takes a line with hits and parses it'''
+    nhits = 0
+    board = int(inline[0])
+    for pair in inline[1:]:
+        nhits += 1
+        ro = pair.split(",")
+        vmm = int(ro[0])
+        ch = int(ro[1])
+        changed = False
+        ADDCA_boards = ['u1','v1','x2','x3']
+        ADDCB_boards = ['x0','x1','u0','v0']
+        vmm_indices = [i for i, x in enumerate(triggerhits["vmm"]) if x == vmm]
+        if (len(vmm_indices) > 0):
+            for j in vmm_indices:
+                if int(ch) == int(triggerhits["ch"][j]):
+                    if (flagA): # flagA => ADDC A got data
+                        if triggerhits["board"][j] != ADDCA_boards[board]:
+                            continue
+                        A["b"].append(board)
+                        A["vmm"].append(vmm)
+                        A["ch"].append(ch)
+                        if (int(inline[0]) > 1):
+                            A["x"].append(board)
+                        else:
+                            A["uv"].append(board)
+                        changed = True
+                    elif (flagB): # ADDC B got data
+                        if triggerhits["board"][j] != ADDCB_boards[board]:
+                            continue
+                        B["b"].append(board)
+                        B["vmm"].append(vmm)
+                        B["ch"].append(ch)
+                        if (int(inline[0]) < 2):
+                            B["x"].append(board)
+                        else:
+                            B["uv"].append(board)
+                        changed = True
+    return A,B,changed,nhits
 
 if __name__ == "__main__":
     main(sys.argv[1:])
