@@ -35,3 +35,12 @@ def update_progress(progress):
     text = "\rPercent: [{0}] {1}% {2}".format( "#"*block + "-"*(barLength-block), progress*100, status)
     sys.stdout.write(text)
     sys.stdout.flush()
+
+def pbftp(time_diff, nprocessed, ntotal):
+    nprocessed, ntotal = float(nprocessed), float(ntotal)
+    rate = (nprocessed+1)/time_diff
+    msg = "\r > %6i / %6i | %2i%% | %8.2fHz | %6.1fm elapsed | %6.1fm remaining"
+    msg = msg % (nprocessed, ntotal, 100*nprocessed/ntotal, rate, time_diff/60, (ntotal-nprocessed)/(rate*60))
+    sys.stdout.write(msg)
+    sys.stdout.flush()
+

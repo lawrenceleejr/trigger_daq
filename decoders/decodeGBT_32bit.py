@@ -43,17 +43,21 @@ def main(argv):
     print "\n"
 
     print "Will not catch > 15+ bugs!"
+    start_time = time.time()
     
     nevent = 0
     (timestamp,timestampsec,timestampns) = (-1,-1,-1)
 
-    for line in datafile:
+    for iline,line in enumerate(datafile):
         if str(line[0:4]) == 'TIME' :
             timestamp = int(float(line[6:-1]))
             timestampsec = timestamp/pow(10,9)
             timestampns = timestamp%pow(10,9)
             continue
         lines.append(line[:len(line)-1])
+
+        if iline % 50000 == 0 and iline > 0:
+            visual.pbftp(time.time() - start_time, iline, num_lines)
 
         n = 5 # start pt of data
         if len(lines) == 4: # groups of 4
@@ -113,12 +117,6 @@ def main(argv):
                 #print "Event", nevent
                 Aflag = True
                 buflen = 0
-                    
-                #### progress bar ####
-                if num_lines > (10*win*4):
-                    if (nevent % (num_lines/(10*win*4)) == 0 ):
-                        visual.update_progress(float(nevent)/num_lines*win*4.)
-                ######################
                     
                 decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n")
 
