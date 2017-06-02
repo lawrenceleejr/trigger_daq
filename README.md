@@ -31,12 +31,29 @@ DAQ scripts for MMTP
 ## TP Output Decoding ##
 
 * Use decodeGBT_32bit.py (for raw GBT packets)
+   
+   `<cmdline> python decodeGBT_32bit.py [-h] [--ifile IFILE] [--ofile OFILE]`
 
 * Use decodeHIT_32bit.py (for HIT packets)
 
+   `<cmdline> python decodeHIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f]`
+
 * Use decodeFIND_32bit.py (for FIND packets)
 
+   `<cmdline> python decodeFIND_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f]`
 
-* To run:
+* Use decodeTIME_32bit.py (for TIME packets)
 
-   `<cmdline> python decodeGBT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f]`
+   `<cmdline> python decodeTIME_32bit.py [-h] [--ifile IFILE] [--ofile OFILE]`
+
+* Use decodeFIT_32bit.py (for FIT packets)
+
+   `<cmdline> python decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f] [-s]`
+
+* Various flags include:
+  * [-i] Input file
+  * [-o] Output file
+  * [-f] Offsets (decode using assumed offsets in the TP firmware)
+  * [-s] Include extra slope information in output
+  * [-r] Run number
+  
