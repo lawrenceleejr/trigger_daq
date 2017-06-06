@@ -9,7 +9,7 @@ Emoji          | Event         | Dates
 :ant: :wrench: | - GBT decoding fails timing: lots of strip data corruption <br>- Add clock cycle to decoding to fix this <br>- Frequent slope corruption due to unaligned slope calculation <br>- Change slope from daisy-chain adder to tree adder | 
 :zap:    | Run 3520      | 02 May - 04 May
 :ant:    | UV offsets flipped | 
-:ant:    | occasional strip corruption |
+:bug:    | occasional strip corruption |
 :wrench: | correct UV offsets |
 :wrench: | set slope = strip*X a la ATLAS, except with X=1 |
 :wrench: | change strip collection strategy from "overwrite" to "no overwrite" |
