@@ -14,6 +14,7 @@ Emoji          | Event         | Dates
 :wrench: | set slope = strip*X a la ATLAS, except with X=1 |
 :wrench: | change strip collection strategy from "overwrite" to "no overwrite" |
 :wrench: | add scintillator timestamp output stream (replaces finder) | 
+-------- | ---- | ----
 :zap: | Run 3521      | 05 May - 08 May
 :zap: | Run 3522-3523 | 11 May - 18 May - 27 May
 
