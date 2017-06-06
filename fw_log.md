@@ -21,9 +21,9 @@ Emoji | Event       | Notes
 .     | :ant:       | Unpredictable slope corruption because latency wrong by 1-2 clock cycles
 .     | :wrench:    | Correct the slope calculation latency
 :zap: | **3521**    | **05 May - 08 May**
-.     | :ant:       | UV offsets flipped
+.     | :ant:       | UV offsets are wrong (flipped)
 .     | :ant:       | Unpredictable strip corruption due to strip/slope misalignment
-.     | :wrench:    | Correct UV offsets
+.     | :wrench:    | Correct UV offsets: 58 (U), 71 (V)
 .     | :wrench:    | Set slope = strip*X a la ATLAS, except with X=1
 .     | :wrench:    | Change strip collection strategy from "overwrite" to "no overwrite"
 .     | :wrench:    | Add scintillator timestamp output stream (replaces finder)
