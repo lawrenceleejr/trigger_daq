@@ -1,10 +1,10 @@
 MM TP firmware log
 ==================
 
-Emoji          | Event         | Dates
+Emoji          | Event         | Notes
 :-------------:| :------------ |:-------:
 :zap:    | **Run 3517: 10 March - 14 March**
-_ | :wrench: | Add roads (1 VMM per road)
+  | :wrench: | Add roads (1 VMM per road)
 _ | :wrench: | Include hits from neighboring roads
 _ | :wrench: | Set slope equal to the strip
 _ | :wrench: | Add offsets to strips: 64 (X), 71 (U), 58 (V)
