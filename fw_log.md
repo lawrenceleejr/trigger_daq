@@ -1,6 +1,12 @@
 MM TP firmware log
 ==================
 
+Markdown | Less | Pretty
+--- | --- | ---
+*Still* | `renders` | **nicely**
+1 | 2 | 3
+
+
 |:rotating_light:| Run 3517. 10 March - 14 March.|
 |:rotating_light:| Run 3518. 21 April - 25 April.|
 |:rotating_light:| Run 3519. 25 April - 01 May (siblings).|
