@@ -8,8 +8,9 @@ Markdown | Less | Pretty
 
 Emoji            | Event         | Details
 :---------------:| ------------- |:-------:
-:zap:<br>:zap:<br>:zap: | Run 3517      | 10 March - 14 March
-:rotating_light: | 
+:zap:            | Run 3517      | 10 March - 14 March
+:ant:            |               |
+:wrench:         |               | 
 :rotating_light: | Run 3518-3519 | 21 April - 25 April - 01 May
 :rotating_light: | Run 3520      | 02 May - 04 May
 :rotating_light: | Run 3521      | 05 May - 08 May
