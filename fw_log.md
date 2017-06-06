@@ -18,12 +18,15 @@ Emoji | Run         | Notes
 .     | :wrench:    | Add clock cycle to decoding
 .     | :wrench:    | Change slope from daisy-chain adder to tree adder
 :zap: | **3520**    | **02 May - 04 May**
+.     | :ant:       | slope calculation latency wrong by 1-2 clock cycles
+.     | :wrench:    | correct the slope calculation latency
+:zap: | **3521**    | **05 May - 08 May**
 .     | :ant:       | UV offsets flipped
 .     | :ant:       | unpredictable strip corruption
 .     | :wrench:    | correct UV offsets
 .     | :wrench:    | set slope = strip*X a la ATLAS, except with X=1
 .     | :wrench:    | change strip collection strategy from "overwrite" to "no overwrite"
 .     | :wrench:    | add scintillator timestamp output stream (replaces finder)
-:zap: | **3521**    | **05 May - 08 May**
 :zap: | **3522/23** | **11 May - 27 May**
+.     | :ant:       | unpredictable strip corruption in the transition from finder to fitter
 
