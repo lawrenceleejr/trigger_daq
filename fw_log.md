@@ -1,8 +1,8 @@
 MM TP firmware log
 ==================
 
-Emoji            | Event         | Details
-:---------------:| ------------- |:-------:
+Emoji            | Event         | Dates
+:---------------:| :------------ |:-------:
 :zap:            | Run 3517      | 10 March - 14 March
 :ant: :wrench:   | Add roads (1 VMM per road) <br> Include hits from neighboring roads <br> Set slope equal to the strip <br> Add offsets to strips: 64 (X), 71 (U), 58 (V) <br> Assign BCID to hits as they arrive from ADDC <br> Add GBT buffer which is 15 BC deep <br> Overhaul output streams <br> Overhaul synthesis/implementation approach 
 :rotating_light: | Run 3518-3519 | 21 April - 25 April - 01 May
