@@ -12,7 +12,7 @@ Emoji | Event       | Notes
 .     | :wrench:    | Add GBT buffer which is 15 BC deep
 .     | :wrench:    | Overhaul output streams
 .     | :wrench:    | Overhaul synthesis/implementation approach
-:zap: | **3518/19** | **21 April - 01 April**
+:zap: | **3518/19** | **21 April - 01 May**
 .     | :ant:       | GBT decoding fails timing: lots of strip data corruption
 .     | :ant:       | Frequent slope corruption due to poorly aligned slope calculation
 .     | :wrench:    | Add clock cycle to decoding
