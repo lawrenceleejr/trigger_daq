@@ -18,11 +18,11 @@ Emoji | Run         | Notes
 .     | :wrench:    | Add clock cycle to decoding
 .     | :wrench:    | Change slope from daisy-chain adder to tree adder
 :zap: | **3520**    | **02 May - 04 May**
-.     | :ant:       | slope calculation latency wrong by 1-2 clock cycles
+.     | :ant:       | unpredictable slope corruption because latency wrong by 1-2 clock cycles
 .     | :wrench:    | correct the slope calculation latency
 :zap: | **3521**    | **05 May - 08 May**
 .     | :ant:       | UV offsets flipped
-.     | :ant:       | unpredictable strip corruption
+.     | :ant:       | unpredictable strip corruption due to strip/slope misalignment
 .     | :wrench:    | correct UV offsets
 .     | :wrench:    | set slope = strip*X a la ATLAS, except with X=1
 .     | :wrench:    | change strip collection strategy from "overwrite" to "no overwrite"
