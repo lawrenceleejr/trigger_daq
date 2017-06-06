@@ -1,8 +1,8 @@
 MM TP firmware log
 ==================
 
-Emoji          | Event         | Notes
-:-------------:| :------------ |:-------:
+Emoji          | Event          | Notes
+:-------------:| :------------: | -------
 :zap: | **Run 3517: 10 Mar - 14 Mar**
 .     | :wrench: | Add roads (1 VMM per road)
 .     | :wrench: | Include hits from neighboring roads
