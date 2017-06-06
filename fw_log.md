@@ -4,7 +4,7 @@ MM TP firmware log
 Emoji            | Event         | Details
 :---------------:| ------------- |:-------:
 :zap:            | Run 3517      | 10 March - 14 March
-:ant:/:wrench:   | Add roads (1 VMM per road) <br> Include hits from neighboring roads <br> Set slope equal to the strip. Add offsets to strips: 64 for X, 71 for U, 58 for V. <br> Assign BCID to hits as they arrive from ADDC. <br> Add GBT buffer which is 15 BC deep. <br> Overhaul output streams <br> Overhaul synthesis/implementation approach |
+:ant:/:wrench:   | Add roads (1 VMM per road) <br> Include hits from neighboring roads <br> Set slope equal to the strip <br> Add offsets to strips: 64 (X), 71 (U), 58 (V) <br> Assign BCID to hits as they arrive from ADDC <br> Add GBT buffer which is 15 BC deep <br> Overhaul output streams <br> Overhaul synthesis/implementation approach |
 :rotating_light: | Run 3518-3519 | 21 April - 25 April - 01 May
 :rotating_light: | Run 3520      | 02 May - 04 May
 :rotating_light: | Run 3521      | 05 May - 08 May
