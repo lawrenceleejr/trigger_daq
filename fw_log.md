@@ -8,8 +8,8 @@ Emoji          | Event         | Dates
 :zap:          | Run 3518-3519 | 21 April - 25 April - 01 May
 :ant: :wrench: | - GBT decoding fails timing: lots of strip data corruption <br>- Add clock cycle to decoding to fix this <br>- Frequent slope corruption due to unaligned slope calculation <br>- Change slope from daisy-chain adder to tree adder | 
 :zap:    | Run 3520      | 02 May - 04 May
-:bug:    | :ant: UV offsets flipped | 
-:bug:    | :ant: occasional strip corruption |
+:ant:    | :ant: UV offsets flipped | 
+:ant:    | :ant: occasional strip corruption |
 :wrench: | :wrench: correct UV offsets |
 :wrench: | :wrench: set slope = strip*X a la ATLAS, except with X=1 |
 :wrench: | :wrench: change strip collection strategy from "overwrite" to "no overwrite" |
