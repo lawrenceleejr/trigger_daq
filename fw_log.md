@@ -1,6 +1,8 @@
 MM TP firmware log
 ==================
 
+Last edited 7 June 2017.
+
 Emoji | Event       | Notes
 :----:| :---------: | -------
 :zap: | **3517**    | **10 March - 14 March**
