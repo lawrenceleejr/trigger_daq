@@ -12,6 +12,7 @@ Emoji | Event       | Notes
 .     | :wrench:    | Add offsets to strips: 64 (X), 71 (U), 58 (V)
 .     | :wrench:    | Assign BCID to hits as they arrive from ADDC
 .     | :wrench:    | Add GBT buffer which is 15 BC deep
+.     | :wrench:    | Relax stereo requirements to any 2 UV planes
 .     | :wrench:    | Overhaul output streams
 .     | :wrench:    | Overhaul synthesis/implementation approach
 :zap: | **3518/19** | **21 April - 01 May**
