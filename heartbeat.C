@@ -23,7 +23,7 @@ void heartbeat(){
     yins.push_back(yin);
   }
 
-  int n = xavs.size();
+  const int n = xavs.size();
   Double_t xl[n], xh[n], x[n];
   Double_t yl[n], yh[n], y[n];
   for (int i=0; i < n; i++){
