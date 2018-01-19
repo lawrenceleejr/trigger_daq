@@ -59,6 +59,7 @@ def main(argv):
     offsetflag = 0
     octgeo = 1
     fulldata = 0 #prints crap like roi, dtheta, etc
+    stripflag = 0
     slopeflag = 0
     
     inputfile = ''
@@ -69,13 +70,13 @@ def main(argv):
     start_time = time.time()
 
     try:
-        opts, args = getopt.getopt(argv, "hi:o:r:fs", ["ifile=", "ofile=", "run="])
+        opts, args = getopt.getopt(argv, "hi:o:r:f", ["ifile=", "ofile=", "run=", 'st', 'sl'])
     except getopt.GetoptError:
-        print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -r <run> [-f] [-s]'
+        print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -r <run> [-f] [--sl] [--st]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -r <run> [-f] [-s]'
+            print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -r <run> [-f] [--sl] [--st]'
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
@@ -85,8 +86,10 @@ def main(argv):
             run = int(arg)
         elif opt == '-f':
             offsetflag = 1
-        elif opt == "-s":
+        elif opt == "--sl":
             slopeflag = 1
+        elif opt == "--st":
+            stripflag = 1
 
     if (offsetflag):
         print "Adding offsets!"
@@ -143,15 +146,16 @@ def main(argv):
             for i in range(4):
                 hits.append(lines[i+1])
             iplane = 0
-            for hit in hits:
-                for j in range(2):
-                    if (run > 3521):
-                        ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, hit, iplane, j, consts.FLIPPEDBOARDS, occ)
-                    else:
-                        ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OLDOFFSETS, hit, iplane, j, consts.FLIPPEDBOARDS, occ)
-                    vmms.append(ivmm)
-                    chs.append(ich)
-                    iplane = iplane + 1
+            if (stripflag):
+                for hit in hits:
+                    for j in range(2):
+                        if (run > 3521):
+                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, hit, iplane, j, consts.FLIPPEDBOARDS, occ)
+                        else:
+                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OLDOFFSETS, hit, iplane, j, consts.FLIPPEDBOARDS, occ)
+                        vmms.append(ivmm)
+                        chs.append(ich)
+                        iplane = iplane + 1
             if (slopeflag):
                 for i in range(4,8):
                     slopes.append(lines[i+1])
@@ -188,9 +192,13 @@ def main(argv):
 
             decodedfile.write('\n' + str(header) + " BCID: " + str(int(bcid,16)))
             for ib in range(8):
-                decodedfile.write('\n' + str(vmms[ib]) + ' ' + str(chs[ib]))
+                decodedfile.write('\n')
+                if (stripflag):
+                    decodedfile.write(str(vmms[ib]) + ' ' + str(chs[ib]))
+                if slopeflag and stripflag:
+                    decodedfile.write(' ')
                 if (slopeflag):
-                    decodedfile.write(' ' + str(svmms[ib]) + ' ' + str(schs[ib]))
+                    decodedfile.write(str(svmms[ib]) + ' ' + str(schs[ib]))
             decodedfile.write('\n' + 'mx_local ' + str(mx_local) + ' ' + str(mx_local_dec/pow(2,14.)))
             if (fulldata):
                 decodedfile.write('\n' + 'roi ' + str(roi_dec) )
