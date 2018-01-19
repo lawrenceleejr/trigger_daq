@@ -45,8 +45,21 @@ DAQ scripts for MMTP
 * Use decodeTIME_32bit.py (for TIME packets)
 
    `<cmdline> python decodeTIME_32bit.py [-h] [--ifile IFILE] [--ofile OFILE]`
+  
+* Use decodeFIT_uvr.py (for FIT packets with new uvr road data format)
 
-* Use decodeFIT_32bit.py (for FIT packets)
+   `<cmdline> python decodeFIT_uvr.py -i <inputfile> -o <outputfile> -r <run> [-f] [--st] [--sl]`
+
+* Various flags include:
+  * [-i] Input file
+  * [-o] Output file
+  * [-f] Offsets (decode using assumed offsets in the TP firmware)
+  * [--st] Include strip information in output
+  * [--sl] Include slope information in output
+  * [-r] Run number
+  
+
+* Use decodeFIT_32bit.py (for FIT packets, deprecated)
 
    `<cmdline> python decodeFIT_32bit.py -i <inputfile> -o <outputfile> -r <run> [-f] [-s]`
 
