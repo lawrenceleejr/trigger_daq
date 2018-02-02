@@ -50,6 +50,8 @@ def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id, flippedboar
             print hit,"on plane", ip
         ivmm = 0
         ich = 0
+    #if int(margin,2) > 0 and int(occ[ip])!=0:
+    #    ivmm += 8
 
     return ivmm, ich
 
@@ -194,11 +196,17 @@ def main(argv):
             for ib in range(8):
                 decodedfile.write('\n')
                 if (stripflag):
-                    decodedfile.write(str(vmms[ib]) + ' ' + str(chs[ib]))
+                    if (vmms[ib] > 7 and chs[ib] != 0):
+                        decodedfile.write(str(vmms[ib]-8) + ' ' + str(chs[ib]) + ' 1')
+                    else:
+                        decodedfile.write(str(vmms[ib]) + ' ' + str(chs[ib]))
                 if slopeflag and stripflag:
                     decodedfile.write(' ')
                 if (slopeflag):
-                    decodedfile.write(str(svmms[ib]) + ' ' + str(schs[ib]))
+                    if (svmms[ib] > 7 and schs[ib] != 0):
+                        decodedfile.write(str(svmms[ib]-8) + ' ' + str(schs[ib]) + ' 1')
+                    else:
+                        decodedfile.write(str(svmms[ib]) + ' ' + str(schs[ib]))
             decodedfile.write('\n' + 'mx_local ' + str(mx_local) + ' ' + str(mx_local_dec/pow(2,14.)))
             if (fulldata):
                 decodedfile.write('\n' + 'roi ' + str(roi_dec) )

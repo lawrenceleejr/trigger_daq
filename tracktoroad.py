@@ -9,6 +9,19 @@ x_off = 64
 
 # flipped planes
 flipped = [0, 3, 5, 6]
+ips = [123, 125, 109, 106, 126, 122, 124, 119][::-1]
+
+
+def parse_config(line):
+    info = line.split()
+    nice_info = info[3].strip("[]")
+    nhits = len(nice_info.split("),"))
+    my_hits = []
+    for j in range(nhits):
+        (ip,vmm,ch) = nice_info.split("),")[j].strip("()").split(",")
+        ib = ips.index(int(ip))
+        my_hits.append(Hit(ib, int(vmm), int(ch)))
+    return my_hits
 
 def create_roads(nstrips):
     if (nstrips % 8 != 0):
@@ -18,7 +31,7 @@ def create_roads(nstrips):
     m_roads = []
     for i in range(nroad):
         m_roads.append(Road(i,i,i))
-        nuv = 3; #1, uv factor for 20 cm chamber
+        nuv = 4; #1, uv factor for 20 cm chamber
         for uv in range(1, nuv+1):
             if (i-uv < 0):
                 continue
@@ -28,12 +41,17 @@ def create_roads(nstrips):
             myroad_3 = Road(i, i-uv,   i+uv-1)
             myroad_4 = Road(i, i-uv+1, i+uv)
             myroad_5 = Road(i, i+uv,   i-uv+1)
-            m_roads.append(myroad_0)
-            m_roads.append(myroad_1)
+            if uv != 4:
+                m_roads.append(myroad_0)
+                m_roads.append(myroad_1)
+                #m_roads.append(myroad_2)
+                # m_roads.append(myroad_3)
+                # m_roads.append(myroad_4) #nathan doesn't have these right now
+                # m_roads.append(myroad_5)
             m_roads.append(myroad_2)
             m_roads.append(myroad_3)
-            #m_roads.append(myroad_4)
-            #m_roads.append(myroad_5)
+            m_roads.append(myroad_4)
+            m_roads.append(myroad_5)
     return m_roads
 
 def flip(ch, ib):
@@ -78,74 +96,48 @@ class Road(object):
 
         slow = 8 * iroad 
         shigh = 8 * (iroad + 1) 
+        
         if strip >= slow and strip < shigh:
             return True
 
         slow -= 0
         shigh += 4
-        
         if strip >= slow and strip < shigh:
             self.margin_boards.append(ib)
             return True
 
 def main():
 
-    event = 1572
+    events = []
 
     hits = []
 
-    print "event %d"%(event)
-    # event 1310
-    if event == 1310:
-        # match
-        hits.append(Hit(5, 7, 31))
-        hits.append(Hit(2, 0, 15))
-        hits.append(Hit(6, 7, 40))
-        hits.append(Hit(1, 0, 25))
-        hits.append(Hit(0, 7, 40))
+    lines_scan = open("scan_config_mm.txt").readlines()
+    for i in range(len(lines_scan)-1):
+        print
+        print color.BLUE + "TRACK %d"%(i) + color.END
+        print lines_scan[i].split()[3:]
+        hits = parse_config(lines_scan[i])
+        process_hits(hits)
 
-    if event == 1799:
-        hits.append(Hit(5, 6, 63))
-        hits.append(Hit(3, 6, 63))
-        hits.append(Hit(4, 1, 47))
-        hits.append(Hit(7, 1, 25))
-        hits.append(Hit(6, 6, 40))
-        hits.append(Hit(0, 6, 40))
+    # if you want to add events by hand
 
-    if event == 1095:
-        # this is weird b/c it wraps around the boards tho
-        hits.append(Hit(5, 7, 23))
-        # hits.append(Hit(3, 7, 40))
-        hits.append(Hit(4, 0, 7))
-        hits.append(Hit(2, 0, 7))
-        # hits.append(Hit(7, 7, 47))
-        hits.append(Hit(6, 7, 40))
-        hits.append(Hit(1, 0, 25))
-        hits.append(Hit(0, 7, 40))
-    
-    if event == 1123:
+    if 1123 in events:
         # i think here there is a duplicate that doesn't make sense, 1126 + 1124
+        print
+        print color.BLUE + "event 1123" + color.END
+        #hits.append(Hit(5, 6, 23))
         hits.append(Hit(3, 6, 23))
+        #hits.append(Hit(4, 1, 7))
         hits.append(Hit(2, 1, 7))
         hits.append(Hit(7, 1, 25))
+        #hits.append(Hit(6, 6, 40))
         hits.append(Hit(1, 1, 25))
         hits.append(Hit(0, 6, 40))
+        process_hits(hits)
+    hits = []
 
-    if event == 1048:
-        hits.append(Hit(5, 6, 19))
-        hits.append(Hit(3, 6, 19))
-        hits.append(Hit(7, 1, 25))
-        hits.append(Hit(1, 1, 25))
-        hits.append(Hit(0, 6, 40))
-
-    if event == 1572:
-        hits.append(Hit(5, 7, 51))
-        hits.append(Hit(3, 7, 51))
-        hits.append(Hit(4, 0, 35))
-        hits.append(Hit(6, 7, 40))
-        hits.append(Hit(1, 0, 25))
-        hits.append(Hit(0, 7, 40))
-
+def process_hits(hits):
 
     my_roads = create_roads(512)
 
@@ -163,7 +155,14 @@ def main():
             if not road.contains_hit(hit.ib, strip):
                 road_good = False
                 break
-        if road_good:
+            else:
+                if hit.ib < 2 or hit.ib > 5:                                                                                             
+                    nx += 1                                                                                                              
+                elif hit.ib == 2 or hit.ib == 4:                                                                                         
+                    nu += 1                                                                                                              
+                elif hit.ib == 3 or hit.ib == 5:                                                                                         
+                    nv += 1 
+        if road_good and nx > 2 and (nu + nv) > 2: 
             print
             print "road: (%d,%d,%d)" %(road.iroadx,road.iroadu,road.iroadv)
             print "margin", road.margin_boards
@@ -180,6 +179,14 @@ def main():
 #                 print "road: (%d,%d,%d)" %(road.iroadx,road.iroadu,road.iroadv)
 #                 print "nx:%d, nu:%d, nv:%d" %(nx,nu,nv)
 
+class color:
+    BLUE      = "\033[94m"
+    GREEN     = "\033[92m"
+    YELLOW    = "\033[93m"
+    RED       = "\033[91m"
+    END       = "\033[0m"
+    BOLD      = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 if __name__ == "__main__":
     main()
