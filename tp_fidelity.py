@@ -8,7 +8,7 @@ tp_fidelity.py -- a script to test self-consistency of the TP output.
 4. Check if the fit is missing any hits which should be there (IN PROGRESS. PRETTY HARD.)
 
 run like:
-> python tp_fidelity.py --fit fit.decode.dat --gbt gbt.decode.dat
+> python tp_fidelity.py --fit fit.decode.dat --gbt gbt.decode.dat [ --ignore-slope ]
 
 """
 
@@ -52,7 +52,7 @@ def main():
 
         mxl_offline = fitpk.mxl_offline()
 
-        if mxl_offline != fitpk.mxl:
+        if mxl_offline != fitpk.mxl and not ops.ignore_slope:
             if abs(int(mxl_offline, base=16) - int(fitpk.mxl, base=16)) == 1:
                 # off by 1: probably just rounding
                 pass
@@ -354,6 +354,7 @@ def options():
     parser = argparse.ArgumentParser(usage=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--gbt", default="mmtp_test_21.decode.dat", help="Input GBT decoded dat file")
     parser.add_argument("--fit", default="mmtp_test_22.decode.dat", help="Input FIT decoded dat file")
+    parser.add_argument("--ignore-slope", action="store_true", default=False, help="Disable slope check, if desired")
     return parser.parse_args()
 
 
