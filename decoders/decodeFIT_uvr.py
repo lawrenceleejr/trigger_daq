@@ -93,6 +93,10 @@ def main(argv):
         elif opt == "--st":
             stripflag = 1
 
+    if not (slopeflag or stripflag):
+        print "Please provide --st and/or --sl to decode strips and/or slopes, respectively."
+        sys.exit(2)
+
     if (offsetflag):
         print "Adding offsets!"
     else:
