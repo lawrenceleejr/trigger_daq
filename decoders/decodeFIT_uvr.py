@@ -26,7 +26,7 @@ import sys, getopt,binstr, time, visual, commonTrig
 
 nevent = 0
 
-def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id, flippedboards, occ):
+def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id, flippedboards, occ, sl=False):
     strip = 0
     mybin = "{0:010b}".format(int(hit[id*4:id*4+4],16))
     margin = mybin[0]
@@ -44,7 +44,7 @@ def decode(offsetflag, octgeo, overall_offset, offsets, hit, ip, id, flippedboar
         ivmm = (strip/64)%8
         ich = strip%64+1
     else:
-        if strip is not 0 and int(occ[ip])==0:
+        if strip is not 0 and int(occ[ip])==0 and not sl:
             print "Occupancy header is 0 but strip isn't!"
             print "Event",nevent
             print hit,"on plane", ip
@@ -66,24 +66,27 @@ def main(argv):
     
     inputfile = ''
     outputfile = ''
+    dumpfile = ''
     run = -1
     colors = visual.bcolors()
     consts = commonTrig.tconsts()
     start_time = time.time()
 
     try:
-        opts, args = getopt.getopt(argv, "hi:o:r:f", ["ifile=", "ofile=", "run=", 'st', 'sl'])
+        opts, args = getopt.getopt(argv, "hi:o:d:r:f", ["ifile=", "ofile=", "dfile=", "run=", 'st', 'sl'])
     except getopt.GetoptError:
-        print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -r <run> [-f] [--sl] [--st]'
+        print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -d <dumpfile> -r <run> [-f] [--sl] [--st]'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -r <run> [-f] [--sl] [--st]'
+            print 'decodeFIT_uvr.py -i <inputfile> -o <outputfile> -d <dumpfile> -r <run> [-f] [--sl] [--st]'
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
         elif opt in ("-o", "--ofile"):
             outputfile = arg
+        elif opt in ("-d", "--dfile"):
+            dumpfile = arg
         elif opt in ("-r", "--run"):
             run = int(arg)
         elif opt == '-f':
@@ -112,6 +115,17 @@ def main(argv):
     num_lines = sum(1 for line in open(inputfile))
     datafile = open(inputfile, 'r')
     decodedfile = open(outputfile, 'w')
+
+    # option to dump raw event
+    if dumpfile:
+        dfile = open(dumpfile, 'r').readlines()
+        events_to_dump = []
+        for df in dfile:
+            if not df:
+                continue
+            df = df.strip()
+            events_to_dump.append(int(df))
+        events_to_dump = sorted(list(set(events_to_dump)))
 
     n = 5 #starting pt of data
     lines = []
@@ -145,7 +159,11 @@ def main(argv):
         if len(lines) == 13: # groups of 13
             global nevent
             nevent = nevent + 1
-            decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns))
+            write_me = "Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns)
+            decodedfile.write(write_me)
+            if dumpfile and nevent in events_to_dump:
+                print write_me
+                print "\n".join(lines)
             header = lines[0] #contains constants + BCID
             occ = list(format(int(header[2:4],16),"08b"))
             bcid = header[4:]
@@ -169,9 +187,9 @@ def main(argv):
                 for slope in slopes:
                     for j in range(2):
                         if (run > 3521):
-                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, slope, iplane, j, consts.FLIPPEDBOARDS, occ)
+                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OFFSETS, slope, iplane, j, consts.FLIPPEDBOARDS, occ, sl=True)
                         else:
-                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OLDOFFSETS, slope, iplane, j, consts.FLIPPEDBOARDS, occ)
+                            ivmm, ich = decode(offsetflag, octgeo, consts.OVERALLOFFSET, consts.OLDOFFSETS, slope, iplane, j, consts.FLIPPEDBOARDS, occ, sl=True)
                         svmms.append(ivmm)
                         schs.append(ich)
                         iplane = iplane + 1

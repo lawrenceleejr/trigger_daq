@@ -24,6 +24,17 @@ def main(argv):
     datafile = open(args.ifile, 'r')
     decodedfile = open(args.ofile, 'w')
 
+    # option to dump raw events
+    if args.dfile:
+        dfile = open(args.dfile, 'r').readlines()
+        events_to_dump = []
+        for df in dfile:
+            if not df:
+                continue
+            df = df.strip()
+            events_to_dump.append(int(df))
+        events_to_dump = sorted(list(set(events_to_dump)))
+
     lines = []
 
     # previous bcids
@@ -56,7 +67,7 @@ def main(argv):
             continue
         lines.append(line[:len(line)-1])
 
-        if iline % 50000 == 0 and iline > 0:
+        if iline % 50000 == 0 and iline > 0 and not args.dfile:
             visual.pbftp(time.time() - start_time, iline, num_lines)
 
         n = 5 # start pt of data
@@ -117,8 +128,11 @@ def main(argv):
                 #print "Event", nevent
                 Aflag = True
                 buflen = 0
-                    
-                decodedfile.write("Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n")
+
+                write_me = "Event " + str(nevent) +" Sec " + str(timestampsec) + " NS " + str(timestampns) + "\n"
+                decodedfile.write(write_me)
+                if args.dfile and nevent in events_to_dump:
+                    print write_me.rstrip("\n")
 
             if (Aflag):
                 addc1 = int(bcid,16)
@@ -141,6 +155,8 @@ def main(argv):
                             arts.append([vmm,art])
                     write_me = "%s %s" % (ibo, " ".join(["%s,%s" % (vmm, art) for vmm,art in arts]))
                     decodedfile.write(write_me+"\n")
+                if args.dfile and nevent in events_to_dump:
+                    print "\n".join(lines)
             lines = []
             
     decodedfile.close()
@@ -160,6 +176,7 @@ def options():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ifile", "-i", default="", help="input file")
     parser.add_argument("--ofile", "-o", default="", help="output file")
+    parser.add_argument("--dfile", "-d", default="", help="input file of event numbers to dump")
     return parser.parse_args()
     
 if __name__ == "__main__":
