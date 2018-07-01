@@ -82,7 +82,7 @@ def udp_rec():
                 del datalist[:8]
 
                 wordcount = 0
-                myfile = files[addrnum-20]
+                myfile = files[int(addrnum)-20]
 
                 #with open("%s_%d.dat"%(outputFileName,int(addrnum)),"a") as myfile:
 
@@ -99,6 +99,8 @@ def udp_rec():
                         wordout = ''
                         wordcount = 0
 
+                myfile.flush()
+                os.fsync(myfile.fileno())
                 time.sleep(sleeptime)
 
     except KeyboardInterrupt:
