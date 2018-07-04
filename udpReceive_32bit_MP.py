@@ -3,7 +3,7 @@
 
 # A.Wang, last edited Aug 17, 2017
 
-import sys, signal, struct, time
+import sys, struct, time
 from udp import udp_fun
 
 from optparse import OptionParser
@@ -11,7 +11,6 @@ import os.path
 
 from multiprocessing import Pool, Process, Queue, Value, Lock
 
-import signal
 import threading
 
 
@@ -21,17 +20,14 @@ maxpkt = 1024*8
 UDP_PORT = 6008
 UDP_IP = ""
 readInterval = 1
-# sleeptime = 0.000001
-sleeptime = 0.1
-nProc = 4
+nProc = 1
+
 
 debug = False
-
 useTestInput = True
-inputRate = 100000 #Hz
+inputRate = 1000 #Hz
 
-printingSleep = 1
-
+printingSleep = 1 #s
 
 # toggle this to print out timestamps (or not)
 timeflag = True
@@ -99,13 +95,10 @@ def udp_rec_mp():
 
     print ( ">>> Receiving From MMTP!" )
     print ( ">>> Type Ctrl+C to stop." )
-    print ( ">>> Sleeping for: ", sleeptime )
 
     udp.set_udp_port(UDP_PORT)
     udp.set_udp_ip(UDP_IP)
     rawsock = udp.udp_client(maxpkt,bufsize)
-
-    # counters = {"nProcessed": Counter(0), "nTriggers": Counter()}
 
     nProcessedCounter = Counter(0)
     nTriggersCounter  = Counter(0)
@@ -121,13 +114,11 @@ def udp_rec_mp():
     try:
         while True:
             if useTestInput:
-                data = '\xf0\x00\x01\x84\x00\x00\x00#\xa2\x00^\xa9\xcd\x10\xe1\xd8'*100
-                # '\xf0\x00\x01\x19\x00\x00\x00#\xa2\x01Z\xe9\xda\xa3w\xec\xa2\x00Z\xea\xda\xa3x\xbb'
+                data = '\xf0\x00\x01\x84\x00\x00\x00#\xa2\x00^\xa9\xcd\x10\xe1\xd8'*10
             else:
                 data, addr = udp.udp_recv(rawsock)
             if debug:
-                print ("Data being handed to the queue")
-                # print data
+                print (">>> Data being handed to the queue")
 
             nTriggersCounter.increment()
             intervalTriggersCounter.increment()
@@ -135,10 +126,12 @@ def udp_rec_mp():
             # processPacket(data,files)
             if useTestInput:
                 time.sleep(1./inputRate)
-            # time.sleep(sleeptime)
 
             if q.full():
+                print (">>> ")
                 print (">>> WARNING: Buffer full!")
+                print (">>> ")
+                time.sleep(1)
 
     except KeyboardInterrupt:
         print ( ">>> Stopped!" )
@@ -155,10 +148,9 @@ def udp_rec_mp():
 
 def printCounters(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,intervalTriggersCounter):
 
-    threading.Timer(printingSleep, printCounters, args=(nProcessedCounter,nTriggersCounter)).start()
+    threading.Timer(printingSleep, printCounters, args=(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,intervalTriggersCounter)).start()
 
-    msg = ">>> nTriggers: {:>5}, nPacketsInBuffer: {:>5}, inputRate: {:>5}, outputRate: {:>5} (Integration Time: {:} s)"%\
-        (nTriggersCounter.value(),
+    msg = ">>> nTriggers: {:>5}, nPacketsInBuffer: {:>5}, inputRate: {:>5} Hz, outputRate: {:>5} Hz   (Integration Time: {} s)".format(nTriggersCounter.value(),
         nTriggersCounter.value()-nProcessedCounter.value(),
         intervalTriggersCounter.value()/printingSleep,
         intervalProcessedCounter.value()/printingSleep,
@@ -175,7 +167,6 @@ def printCounters(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,in
 
 
 def handleInput(q, files, counter1, counter2):
-    # signal.signal(signal.SIGINT, signal.SIG_IGN)
     pool = Pool(processes=nProc)
     while True:
         if debug:
@@ -200,7 +191,6 @@ def processPacket(data, files):
     datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(data)]
 
     if debug:
-        # print( "Raw data: " + data )
         print( " ".join(datalist) )
 
     if len(datalist) > 7:
@@ -226,12 +216,6 @@ def processPacket(data, files):
                 wordout = ''
                 wordcount = 0
     return
-
-
-# Things I want outputed to the console:
-# * Number of packets received
-# * Average Rate of Triggers (previous 30 s)
-# * Number of packets in buffer
 
 
 if __name__ == "__main__":
