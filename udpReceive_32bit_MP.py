@@ -11,6 +11,7 @@ import os.path
 
 from multiprocessing import Pool, Process, Queue
 
+import signal
 
 
 #bufsize = 65536
@@ -19,10 +20,14 @@ maxpkt = 1024*8
 UDP_PORT = 6008
 UDP_IP = ""
 readInterval = 1
-sleeptime = 0.000001
+# sleeptime = 0.000001
+sleeptime = 0.1
 nProc = 2
 
 debug = True
+
+useTestInput = True
+inputRate = 1 #Hz
 
 
 # toggle this to print out timestamps (or not)
@@ -55,7 +60,7 @@ def main():
     if not options.newFile:
         print ( "Doesn't delete old file! If new file desired, add -n option." )
 
-    udp_rec()
+    udp_rec_mp()
 
     return
 
@@ -81,37 +86,77 @@ def udp_rec_mp():
     udp.set_udp_ip(UDP_IP)
     rawsock = udp.udp_client(maxpkt,bufsize)
 
-    q = Manager().Queue()
-    Process(target=self.handleInput, args=(q,files)).start()
+    q = Queue()
+    Process(target=handleInput, args=(q,files)).start()
 
     try:
         while True:
-            data, addr = udp.udp_recv(rawsock)
-            q.put([data])
+            if useTestInput:
+                data = '\xf0\x00\x01\x84\x00\x00\x00#\xa2\x00^\xa9\xcd\x10\xe1\xd8'*10
+                # '\xf0\x00\x01\x19\x00\x00\x00#\xa2\x01Z\xe9\xda\xa3w\xec\xa2\x00Z\xea\xda\xa3x\xbb'
+            else:
+                data, addr = udp.udp_recv(rawsock)
+            if debug:
+                print ("Data being handed to the queue")
+                # print data
+            # inputCounter+=1
+            # nItemsInBuffer+=1
+            q.put(data)
+            # processPacket(data,files)
+            # nItemsInBuffer-=1
+            if useTestInput:
+                time.sleep(1./inputRate)
+            # time.sleep(sleeptime)
+
+            # every 10 seconds
+            # if int(time.strftime("%S"))%2==0:
+            # msg = "test"
+            # print inputCounter
+            # print nItemsInBuffer
+            # sys.stdout.write(msg)
+            # sys.stdout.flush()
+
     except KeyboardInterrupt:
         print ( ">>> Stopped!" )
         print ( ">>> Have a nice day!" )
         rawsock.close()
         for file in files:
             file.flush()
-            os.fsync(myfile.fileno())
+            os.fsync(file.fileno())
             file.close()
+    except:
+        print (">>> Something screwed up in udp_rec_mp()...")
 
 # define a few new functions. These will be thrown in a multi-threading pool.
 
 def handleInput(q, files):
-    with Pool(processes=nProc) as pool:
-        while True:
+    # signal.signal(signal.SIGINT, signal.SIG_IGN)
+    pool = Pool(processes=1)
+    while True:
+        if debug:
+            print ( "Number of packets in buffer: N" )
+        try:
+            # print ("1")
             pool.apply_async(processPacket, (q.get(),files))
+            # print ("2")
+        except KeyboardInterrupt:
+            # pool.terminate()
+            # pool.join()
+            break
+        except:
+            print (">>> handleInput: Something has happened in launching child process")
     return
 
 def processPacket(data, files):
 
+    if debug:
+        print (">>> processPacket: Processing packet")
+
     datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(data)]
 
     if debug:
-        print( "Raw data: " , data )
-        print( "Formatted Data List: " , datalist )
+        print( "Raw data: " + data )
+        print( datalist )
 
     if len(datalist) > 7:
         addrnum = datalist[7] # address number reading from
@@ -121,7 +166,7 @@ def processPacket(data, files):
         myfile = files[int(addrnum)-20]
 
         if debug:
-            print( ">>> Writing packet to file " , int(addrnum) )
+            print( ">>> processPacket: Writing packet to file " , int(addrnum) )
 
         wordout = ''
         fittime = time.time()*pow(10,9)
@@ -132,15 +177,16 @@ def processPacket(data, files):
             wordout = wordout + byte
             if wordcount == 4:
                 myfile.write(str(wordout) + '\n')
-                print (wordout)
+                # print (wordout)
                 wordout = ''
                 wordcount = 0
-
-        # myfile.flush()
-        # os.fsync(myfile.fileno())
-        # time.sleep(sleeptime)
-
     return
+
+
+# Things I want outputed to the console:
+# * Number of packets received
+# * Average Rate of Triggers (previous 30 s)
+# * Number of packets in buffer
 
 
 if __name__ == "__main__":
