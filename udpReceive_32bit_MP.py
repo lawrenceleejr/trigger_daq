@@ -9,9 +9,10 @@ from udp import udp_fun
 from optparse import OptionParser
 import os.path
 
-from multiprocessing import Pool, Process, Queue
+from multiprocessing import Pool, Process, Queue, Value, Lock
 
 import signal
+import threading
 
 
 #bufsize = 65536
@@ -22,12 +23,14 @@ UDP_IP = ""
 readInterval = 1
 # sleeptime = 0.000001
 sleeptime = 0.1
-nProc = 2
+nProc = 4
 
-debug = True
+debug = False
 
 useTestInput = True
-inputRate = 1 #Hz
+inputRate = 100000 #Hz
+
+integrationTimeForAverage = 30 #s
 
 
 # toggle this to print out timestamps (or not)
@@ -64,6 +67,22 @@ def main():
 
     return
 
+class Counter(object):
+    def __init__(self, initval=0):
+        self.val = Value('i', initval)
+        self.lock = Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+
+    def value(self):
+        with self.lock:
+            return self.val.value
+
+    def reset(self):
+        with self.lock:
+            self.val.value = 0
 
 def udp_rec_mp():
 
@@ -86,35 +105,36 @@ def udp_rec_mp():
     udp.set_udp_ip(UDP_IP)
     rawsock = udp.udp_client(maxpkt,bufsize)
 
+    # counters = {"nProcessed": Counter(0), "nTriggers": Counter()}
+
+    nProcessedCounter = Counter(0)
+    nTriggersCounter = Counter(0)
+
     q = Queue()
-    Process(target=handleInput, args=(q,files)).start()
+    Process(target=handleInput, args=(q,files,nProcessedCounter) ).start()
+
+    printCounters(nProcessedCounter,nTriggersCounter)
 
     try:
         while True:
             if useTestInput:
-                data = '\xf0\x00\x01\x84\x00\x00\x00#\xa2\x00^\xa9\xcd\x10\xe1\xd8'*10
+                data = '\xf0\x00\x01\x84\x00\x00\x00#\xa2\x00^\xa9\xcd\x10\xe1\xd8'*100
                 # '\xf0\x00\x01\x19\x00\x00\x00#\xa2\x01Z\xe9\xda\xa3w\xec\xa2\x00Z\xea\xda\xa3x\xbb'
             else:
                 data, addr = udp.udp_recv(rawsock)
             if debug:
                 print ("Data being handed to the queue")
                 # print data
-            # inputCounter+=1
-            # nItemsInBuffer+=1
+
+            nTriggersCounter.increment()
             q.put(data)
             # processPacket(data,files)
-            # nItemsInBuffer-=1
             if useTestInput:
                 time.sleep(1./inputRate)
             # time.sleep(sleeptime)
 
-            # every 10 seconds
-            # if int(time.strftime("%S"))%2==0:
-            # msg = "test"
-            # print inputCounter
-            # print nItemsInBuffer
-            # sys.stdout.write(msg)
-            # sys.stdout.flush()
+            if q.full():
+                print (">>> WARNING: Buffer full!")
 
     except KeyboardInterrupt:
         print ( ">>> Stopped!" )
@@ -129,16 +149,27 @@ def udp_rec_mp():
 
 # define a few new functions. These will be thrown in a multi-threading pool.
 
-def handleInput(q, files):
+def printCounters(nProcessedCounter,nTriggersCounter):
+
+    threading.Timer(1.0, printCounters, args=(nProcessedCounter,nTriggersCounter)).start()
+
+    msg = ">>> nTriggers: %d, nPacketsInBuffer: %d"%\
+        (nTriggersCounter.value(), nTriggersCounter.value()-nProcessedCounter.value())
+    print (msg)
+    sys.stdout.write("\033[F")
+
+
+
+
+def handleInput(q, files, counter):
     # signal.signal(signal.SIGINT, signal.SIG_IGN)
-    pool = Pool(processes=1)
+    pool = Pool(processes=nProc)
     while True:
         if debug:
             print ( "Number of packets in buffer: N" )
         try:
-            # print ("1")
             pool.apply_async(processPacket, (q.get(),files))
-            # print ("2")
+            counter.increment()
         except KeyboardInterrupt:
             # pool.terminate()
             # pool.join()
@@ -155,8 +186,8 @@ def processPacket(data, files):
     datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(data)]
 
     if debug:
-        print( "Raw data: " + data )
-        print( datalist )
+        # print( "Raw data: " + data )
+        print( " ".join(datalist) )
 
     if len(datalist) > 7:
         addrnum = datalist[7] # address number reading from
