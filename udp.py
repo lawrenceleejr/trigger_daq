@@ -13,11 +13,11 @@ class udp_fun:
 
     def set_udp_ip(self,NEW_UDP_IP):
         self.UDP_IP = NEW_UDP_IP
-        print "New IP set: " + str(self.UDP_IP)
+        print ("New IP set: " + str(self.UDP_IP) )
 
     def set_udp_port(self,NEW_UDP_PORT):
         self.UDP_PORT = NEW_UDP_PORT
-        print "New port set: " + str(self.UDP_PORT)
+        print ("New port set: " + str(self.UDP_PORT))
 
     def udp_client(self,max_pkt_len, buffer_size):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -26,4 +26,4 @@ class udp_fun:
     def udp_recv(self,sock):
         data, addr = sock.recvfrom(4096*4)
         return data, addr
-    
+
