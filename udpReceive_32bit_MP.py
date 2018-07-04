@@ -23,7 +23,7 @@ readInterval = 1
 nProc = 1
 
 
-debug = True
+debug = False
 useTestInput = True
 inputRate = 10 #Hz
 
