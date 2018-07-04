@@ -23,9 +23,9 @@ readInterval = 1
 nProc = 1
 
 
-debug = False
+debug = True
 useTestInput = True
-inputRate = 1000 #Hz
+inputRate = 10 #Hz
 
 printingSleep = 1 #s
 
@@ -83,12 +83,8 @@ class Counter(object):
 def udp_rec_mp():
 
     # open all files
-    file_20 = open("%s_%d.dat"%(outputFileName,20),"a")
-    file_21 = open("%s_%d.dat"%(outputFileName,21),"a")
-    file_22 = open("%s_%d.dat"%(outputFileName,22),"a")
-    file_23 = open("%s_%d.dat"%(outputFileName,23),"a")
 
-    files = [file_20, file_21, file_22, file_23]
+    files = [open("%s_%d.dat"%(outputFileName,i),"a") for i in range(20,24)]
 
     udp = udp_fun()
     wordcount = 0
@@ -200,21 +196,28 @@ def processPacket(data, files):
         wordcount = 0
         myfile = files[int(addrnum)-20]
 
+
         if debug:
             print( ">>> processPacket: Writing packet to file " , int(addrnum) )
 
         wordout = ''
         fittime = time.time()*pow(10,9)
-        if (timeflag):
-            myfile.write('TIME: ' + '%f'%fittime + '\n')
-        for byte in datalist:
-            wordcount = wordcount + 1
-            wordout = wordout + byte
-            if wordcount == 4:
-                myfile.write(str(wordout) + '\n')
-                # print (wordout)
-                wordout = ''
-                wordcount = 0
+
+
+        file_name = "%s_%d.dat"%(outputFileName,int(addrnum))
+        with open(file_name, 'a') as f:
+
+            if (timeflag):
+                print f
+                f.write('TIME: ' + '%f'%fittime + '\n')
+            for byte in datalist:
+                wordcount = wordcount + 1
+                wordout = wordout + byte
+                if wordcount == 4:
+                    f.write(str(wordout) + '\n')
+                    # print (wordout)
+                    wordout = ''
+                    wordcount = 0
     return
 
 
