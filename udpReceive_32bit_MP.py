@@ -30,7 +30,7 @@ debug = False
 useTestInput = True
 inputRate = 100000 #Hz
 
-integrationTimeForAverage = 30 #s
+printingSleep = 1
 
 
 # toggle this to print out timestamps (or not)
@@ -108,12 +108,15 @@ def udp_rec_mp():
     # counters = {"nProcessed": Counter(0), "nTriggers": Counter()}
 
     nProcessedCounter = Counter(0)
-    nTriggersCounter = Counter(0)
+    nTriggersCounter  = Counter(0)
+
+    intervalProcessedCounter = Counter(0)
+    intervalTriggersCounter  = Counter(0)
 
     q = Queue()
-    Process(target=handleInput, args=(q,files,nProcessedCounter) ).start()
+    Process(target=handleInput, args=(q,files,nProcessedCounter,intervalProcessedCounter) ).start()
 
-    printCounters(nProcessedCounter,nTriggersCounter)
+    printCounters(nProcessedCounter,nTriggersCounter, intervalProcessedCounter, intervalTriggersCounter)
 
     try:
         while True:
@@ -127,6 +130,7 @@ def udp_rec_mp():
                 # print data
 
             nTriggersCounter.increment()
+            intervalTriggersCounter.increment()
             q.put(data)
             # processPacket(data,files)
             if useTestInput:
@@ -149,19 +153,28 @@ def udp_rec_mp():
 
 # define a few new functions. These will be thrown in a multi-threading pool.
 
-def printCounters(nProcessedCounter,nTriggersCounter):
+def printCounters(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,intervalTriggersCounter):
 
-    threading.Timer(1.0, printCounters, args=(nProcessedCounter,nTriggersCounter)).start()
+    threading.Timer(printingSleep, printCounters, args=(nProcessedCounter,nTriggersCounter)).start()
 
-    msg = ">>> nTriggers: %d, nPacketsInBuffer: %d"%\
-        (nTriggersCounter.value(), nTriggersCounter.value()-nProcessedCounter.value())
+    msg = ">>> nTriggers: {:>5}, nPacketsInBuffer: {:>5}, inputRate: {:>5}, outputRate: {:>5} (Integration Time: {:} s)"%\
+        (nTriggersCounter.value(),
+        nTriggersCounter.value()-nProcessedCounter.value(),
+        intervalTriggersCounter.value()/printingSleep,
+        intervalProcessedCounter.value()/printingSleep,
+        printingSleep
+        )
     print (msg)
     sys.stdout.write("\033[F")
 
+    intervalProcessedCounter.reset()
+    intervalTriggersCounter.reset()
+
+    return
 
 
 
-def handleInput(q, files, counter):
+def handleInput(q, files, counter1, counter2):
     # signal.signal(signal.SIGINT, signal.SIG_IGN)
     pool = Pool(processes=nProc)
     while True:
@@ -169,7 +182,8 @@ def handleInput(q, files, counter):
             print ( "Number of packets in buffer: N" )
         try:
             pool.apply_async(processPacket, (q.get(),files))
-            counter.increment()
+            counter1.increment()
+            counter2.increment()
         except KeyboardInterrupt:
             # pool.terminate()
             # pool.join()
