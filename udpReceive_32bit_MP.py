@@ -12,6 +12,7 @@ import os.path
 from multiprocessing import Pool, Process, Queue, Value, Lock
 
 import threading
+import signal
 
 
 #bufsize = 65536
@@ -32,8 +33,15 @@ printingSleep = 1 #s
 # toggle this to print out timestamps (or not)
 timeflag = True
 
-global outputFileName
-outputFileName = ''
+# open all files
+outputFileName = 'mmtp_test'
+if any([os.path.isfile("%s_%d.dat" % (outputFileName, i)) for i in [20, 21, 22, 23]]):
+    sys.exit("Output file(s) already exist! Exiting.")
+file_20 = open("%s_%d.dat" % (outputFileName, 20), "a")
+file_21 = open("%s_%d.dat" % (outputFileName, 21), "a")
+file_22 = open("%s_%d.dat" % (outputFileName, 22), "a")
+file_23 = open("%s_%d.dat" % (outputFileName, 23), "a")
+files = [file_20, file_21, file_22, file_23]
 
 def main():
 
@@ -42,22 +50,8 @@ def main():
                       action="store_true",
                       dest="newFile",
                       default=False,
-                      help="if the output file already exists don't overwrite it")
+                      help="This option is deprecated as long as we need to open the files globally!")
     (options, args) = parser.parse_args()
-    global outputFileName
-    if len(args)==0:
-        outputFileName = "mmtp_test"
-    else:
-        outputFileName = args[0].split(".")[0] if ("." in args[0]) else args[0]
-
-    if options.newFile:
-        counter = 1
-        while os.path.exists(outputFileName + ".dat"):
-            outputFileName = outputFileName.split("__")[0]+"__%d"%counter
-            counter += 1
-    print (outputFileName)
-    if not options.newFile:
-        print ( "Doesn't delete old file! If new file desired, add -n option." )
 
     udp_rec_mp()
 
@@ -82,14 +76,6 @@ class Counter(object):
 
 def udp_rec_mp():
 
-    # open all files
-    file_20 = open("%s_%d.dat"%(outputFileName,20),"a")
-    file_21 = open("%s_%d.dat"%(outputFileName,21),"a")
-    file_22 = open("%s_%d.dat"%(outputFileName,22),"a")
-    file_23 = open("%s_%d.dat"%(outputFileName,23),"a")
-
-    files = [file_20, file_21, file_22, file_23]
-
     udp = udp_fun()
     wordcount = 0
 
@@ -107,7 +93,7 @@ def udp_rec_mp():
     intervalTriggersCounter  = Counter(0)
 
     q = Queue()
-    Process(target=handleInput, args=(q,files,nProcessedCounter,intervalProcessedCounter) ).start()
+    Process(target=handleInput, args=(q,nProcessedCounter,intervalProcessedCounter) ).start()
 
     printCounters(nProcessedCounter,nTriggersCounter, intervalProcessedCounter, intervalTriggersCounter)
 
@@ -134,13 +120,15 @@ def udp_rec_mp():
                 time.sleep(1)
 
     except KeyboardInterrupt:
+        print
         print ( ">>> Stopped!" )
-        print ( ">>> Have a nice day!" )
+        print ( ">>> Closing files..." )
         rawsock.close()
         for file in files:
             file.flush()
             os.fsync(file.fileno())
             file.close()
+        print ( ">>> Files closed. Have a nice day!" )
     except:
         print (">>> Something screwed up in udp_rec_mp()...")
 
@@ -148,7 +136,9 @@ def udp_rec_mp():
 
 def printCounters(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,intervalTriggersCounter):
 
-    threading.Timer(printingSleep, printCounters, args=(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,intervalTriggersCounter)).start()
+    timer = threading.Timer(printingSleep, printCounters, args=(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,intervalTriggersCounter))
+    timer.daemon = True
+    timer.start()
 
     msg = ">>> nTriggers: {:>5}, nPacketsInBuffer: {:>5}, inputRate: {:>5} Hz, outputRate: {:>5} Hz   (Integration Time: {} s)".format(nTriggersCounter.value(),
         nTriggersCounter.value()-nProcessedCounter.value(),
@@ -165,14 +155,17 @@ def printCounters(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,in
     return
 
 
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-def handleInput(q, files, counter1, counter2):
-    pool = Pool(processes=nProc)
+
+def handleInput(q, counter1, counter2):
+    pool = Pool(processes=nProc, initializer=init_worker)
     while True:
         if debug:
             print ( "Number of packets in buffer: N" )
         try:
-            pool.apply_async(processPacket, (q.get(),files))
+            pool.apply_async(processPacket, (q.get(), ))
             counter1.increment()
             counter2.increment()
         except KeyboardInterrupt:
@@ -183,7 +176,7 @@ def handleInput(q, files, counter1, counter2):
             print (">>> handleInput: Something has happened in launching child process")
     return
 
-def processPacket(data, files):
+def processPacket(data):
 
     if debug:
         print (">>> processPacket: Processing packet")
@@ -215,6 +208,8 @@ def processPacket(data, files):
                 # print (wordout)
                 wordout = ''
                 wordcount = 0
+                # myfile.flush()
+                # os.fsync(myfile.fileno())
     return
 
 
