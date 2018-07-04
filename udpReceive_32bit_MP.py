@@ -25,7 +25,7 @@ nProc = 1
 
 
 debug = False
-useTestInput = True
+useTestInput = False
 inputRate = 1000 #Hz
 
 printingSleep = 1 #s
