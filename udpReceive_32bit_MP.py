@@ -23,6 +23,7 @@ UDP_IP = ""
 readInterval = 1
 nProc = 1
 
+tenToTheNinth = pow(10,9)
 
 printingSleep = 1 #s
 
@@ -229,31 +230,27 @@ def handleInput(q, counter1, counter2):
 
 def processPacket(data):
 
+    startTime = datetime.datetime.now()
+
     if args.debug:
         print (">>> processPacket: Processing packet")
 
     datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(data)]
 
-    if args.debug:
-        print( " ".join(datalist) )
-
-    if len(datalist) > 7:
+    try: #for speed
         addrnum = datalist[7] # address number reading from
         del datalist[:8]
 
         wordcount = 0
         myfile = files[int(addrnum)-20]
 
-        if args.debug:
-            print( ">>> processPacket: Writing packet to file " , int(addrnum) )
-
         wordout = ''
-        fittime = time.time()*pow(10,9)
         if (timeflag):
+            fittime = time.time()*tenToTheNinth
             myfile.write('TIME: ' + '%f'%fittime + '\n')
         for byte in datalist:
-            wordcount = wordcount + 1
-            wordout = wordout + byte
+            wordcount += 1
+            wordout += byte
             if wordcount == 4:
                 myfile.write(str(wordout) + '\n')
                 # print (wordout)
@@ -261,7 +258,10 @@ def processPacket(data):
                 wordcount = 0
         myfile.flush()
         os.fsync(myfile.fileno())
+    except:
+        return
 
+    print(datetime.datetime.now() - startTime)
     return
 
 
