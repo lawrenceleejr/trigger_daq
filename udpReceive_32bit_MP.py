@@ -230,7 +230,7 @@ def handleInput(q, counter1, counter2):
 
 def processPacket(data):
 
-    startTime = datetime.datetime.now()
+    # startTime = datetime.datetime.now()
 
     if args.debug:
         print (">>> processPacket: Processing packet")
@@ -261,7 +261,7 @@ def processPacket(data):
     except:
         return
 
-    print(datetime.datetime.now() - startTime)
+    # print(datetime.datetime.now() - startTime)
     return
 
 
