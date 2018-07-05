@@ -3,7 +3,7 @@
 
 # A.Wang, last edited Aug 17, 2017
 
-import sys, struct, time
+import sys, struct, time, datetime
 from udp import udp_fun
 
 import argparse
@@ -43,7 +43,7 @@ parser.add_argument("-d", "--debug",
                   help="Turns on debugging console output")
 parser.add_argument("-t", "--useTestInput",
                   action="store_true",
-                  default=False,
+                  default=True,
                   help="turns on internal test input")
 parser.add_argument("-r", "--inputRate",
                   type=float,
@@ -121,7 +121,13 @@ def udp_rec_mp():
     q = Queue()
     Process(target=handleInput, args=(q,nProcessedCounter,intervalProcessedCounter) ).start()
 
-    printCounters(nProcessedCounter,nTriggersCounter, intervalProcessedCounter, intervalTriggersCounter)
+    startTime = datetime.datetime.now()
+    # print startTime
+    print (">>> Starting DAQ at %s"%(startTime.strftime("%H:%M:%S") ))
+    print (">>>")
+
+    timer = printCounters(nProcessedCounter,nTriggersCounter, intervalProcessedCounter, intervalTriggersCounter)
+
 
     try:
         while True:
@@ -140,22 +146,37 @@ def udp_rec_mp():
                 time.sleep(1./args.inputRate)
 
             if q.full():
+                timeSinceStart = datetime.datetime.now() - startTime
                 print (">>> ")
-                print (">>> WARNING: Buffer full!")
+                print (">>> WARNING: Buffer full! I've been running for %s"%str(timeSinceStart))
                 print (">>> ")
                 time.sleep(1)
 
     except KeyboardInterrupt:
-        print
+
+        print ( ">>>" )
         print ( ">>> Stopped!" )
+
+        while not q.empty():
+            print (">>> ")
+            print (">>> Waiting for buffer to clear...")
+            print (">>> ")
+            time.sleep(1)
+
+        print ( ">>> " )
         print ( ">>> Closing files..." )
+        print ( ">>> " )
+
         rawsock.close()
         for file in files:
             file.flush()
             os.fsync(file.fileno())
             file.close()
+
         print ( ">>> Files closed. Have a nice day!" )
+
     except:
+
         print (">>> Something screwed up in udp_rec_mp()...")
 
 # define a few new functions. These will be thrown in a multi-threading pool.
@@ -178,7 +199,7 @@ def printCounters(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,in
     intervalProcessedCounter.reset()
     intervalTriggersCounter.reset()
 
-    return
+    return timer
 
 
 def init_worker():
@@ -195,8 +216,12 @@ def handleInput(q, counter1, counter2):
             counter1.increment()
             counter2.increment()
         except KeyboardInterrupt:
-            # pool.terminate()
-            # pool.join()
+            while not q.empty():
+                if args.debug:
+                    print ("Clearing Buffer")
+                pool.apply_async(processPacket, (q.get(), ))
+                counter1.increment()
+                counter2.increment()
             break
         except:
             print (">>> handleInput: Something has happened in launching child process")
@@ -236,6 +261,7 @@ def processPacket(data):
                 wordcount = 0
         myfile.flush()
         os.fsync(myfile.fileno())
+
     return
 
 
