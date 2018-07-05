@@ -24,34 +24,45 @@ readInterval = 1
 nProc = 1
 
 
-debug = False
-useTestInput = False
-inputRate = 1000 #Hz
-
 printingSleep = 1 #s
 
 # toggle this to print out timestamps (or not)
 timeflag = True
 
+
+
+parser = OptionParser(usage="usage: %prog [options] outputFileName")
+parser.add_option("-n", "--newFile",
+                  action="store_true",
+                  dest="newFile",
+                  default=False,
+                  help="Forces overwriting of output files")
+parser.add_option("-d", "--debug",
+                  action="store_true",
+                  default=False,
+                  help="Turns on debugging console output")
+parser.add_option("-t", "--useTestInput",
+                  action="store_true",
+                  default=False,
+                  help="turns on internal test input")
+parser.add_option("-r", "--inputRate",
+                  type=float,
+                  default=100,
+                  help="internal test input rate in Hz (may not actually represent input rate since this is done with a sleep)")
+(options, args) = parser.parse_args()
+
 # open all files
 outputFileName = 'mmtp_test'
 if any([os.path.isfile("%s_%d.dat" % (outputFileName, i)) for i in [20, 21, 22, 23]]):
-    sys.exit("Output file(s) already exist! Exiting.")
-file_20 = open("%s_%d.dat" % (outputFileName, 20), "a")
-file_21 = open("%s_%d.dat" % (outputFileName, 21), "a")
-file_22 = open("%s_%d.dat" % (outputFileName, 22), "a")
-file_23 = open("%s_%d.dat" % (outputFileName, 23), "a")
-files = [file_20, file_21, file_22, file_23]
+    if options.newFile:
+        print (">>> Removing old files since you specified the -n option")
+        os.system("rm %s_*.dat"%outputFileName)
+    else:
+        sys.exit("Output file(s) already exist! Exiting.")
+
+files = [open("%s_%d.dat" % (outputFileName, i), "a") for i in range(20,24)]
 
 def main():
-
-    parser = OptionParser(usage="usage: %prog [options] outputFileName")
-    parser.add_option("-n", "--newFile",
-                      action="store_true",
-                      dest="newFile",
-                      default=False,
-                      help="This option is deprecated as long as we need to open the files globally!")
-    (options, args) = parser.parse_args()
 
     udp_rec_mp()
 
@@ -99,19 +110,19 @@ def udp_rec_mp():
 
     try:
         while True:
-            if useTestInput:
+            if options.useTestInput:
                 data = '\xf0\x00\x01\x84\x00\x00\x00#\xa2\x00^\xa9\xcd\x10\xe1\xd8'*10
             else:
                 data, addr = udp.udp_recv(rawsock)
-            if debug:
+            if options.debug:
                 print (">>> Data being handed to the queue")
 
             nTriggersCounter.increment()
             intervalTriggersCounter.increment()
             q.put(data)
             # processPacket(data,files)
-            if useTestInput:
-                time.sleep(1./inputRate)
+            if options.useTestInput:
+                time.sleep(1./options.inputRate)
 
             if q.full():
                 print (">>> ")
@@ -162,7 +173,7 @@ def init_worker():
 def handleInput(q, counter1, counter2):
     pool = Pool(processes=nProc, initializer=init_worker)
     while True:
-        if debug:
+        if options.debug:
             print ( "Number of packets in buffer: N" )
         try:
             pool.apply_async(processPacket, (q.get(), ))
@@ -178,12 +189,12 @@ def handleInput(q, counter1, counter2):
 
 def processPacket(data):
 
-    if debug:
+    if options.debug:
         print (">>> processPacket: Processing packet")
 
     datalist = [format(int(hex(ord(c)), 16), '02X') for c in list(data)]
 
-    if debug:
+    if options.debug:
         print( " ".join(datalist) )
 
     if len(datalist) > 7:
@@ -193,7 +204,7 @@ def processPacket(data):
         wordcount = 0
         myfile = files[int(addrnum)-20]
 
-        if debug:
+        if options.debug:
             print( ">>> processPacket: Writing packet to file " , int(addrnum) )
 
         wordout = ''
