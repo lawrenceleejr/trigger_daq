@@ -158,6 +158,8 @@ def udp_rec_mp():
         print ( ">>>" )
         print ( ">>> Stopped!" )
 
+        printCounters(nProcessedCounter,nTriggersCounter, intervalProcessedCounter, intervalTriggersCounter)
+
         while not q.empty():
             print (">>> ")
             print (">>> Waiting for buffer to clear...")
@@ -175,6 +177,7 @@ def udp_rec_mp():
             file.close()
 
         print ( ">>> Files closed. Have a nice day!" )
+        sys.exit(0)
 
     except:
 
@@ -202,7 +205,6 @@ def printCounters(nProcessedCounter,nTriggersCounter,intervalProcessedCounter,in
 
     return timer
 
-
 def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -210,8 +212,6 @@ def init_worker():
 def handleInput(q, counter1, counter2):
     pool = Pool(processes=nProc, initializer=init_worker)
     while True:
-        if args.debug:
-            print ( "Number of packets in buffer: N" )
         try:
             pool.apply_async(processPacket, (q.get(), ))
             counter1.increment()
@@ -219,7 +219,8 @@ def handleInput(q, counter1, counter2):
         except KeyboardInterrupt:
             while not q.empty():
                 if args.debug:
-                    print ("Clearing Buffer")
+                    print (".")
+                # processPacket(q.get())
                 pool.apply_async(processPacket, (q.get(), ))
                 counter1.increment()
                 counter2.increment()
