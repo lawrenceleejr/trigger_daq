@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Receives UDP packets from the TP
 # Writes them into files depending on the address in the header
 
@@ -32,7 +34,7 @@ timeflag = True
 
 
 
-parser = argparse.ArgumentParser(usage="usage: %prog [options] outputFileName")
+parser = argparse.ArgumentParser(usage="usage: prog [options] outputFileName")
 parser.add_argument("-n", "--newFile",
                   action="store_true",
                   dest="newFile",
